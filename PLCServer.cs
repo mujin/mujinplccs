@@ -2,20 +2,32 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using ZMQ;
 using Newtonsoft.Json;
 
 namespace mujinplccs
 {
-    public class PLCServer
+    public sealed class PLCServer
     {
-        private string addr;
+        private PLCController controller = null;
+        private string addr = "";
         private bool isok = true;
-    
-        public PLCServer(string addr = "tcp://*:5555")
+        private Thread thread = null;
+        private JsonSerializerSettings jsonSettings = new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            MissingMemberHandling = MissingMemberHandling.Ignore,
+        };
+
+        public PLCServer(string addr) : this(new PLCController(), addr)
+        {
+        }
+
+        public PLCServer(PLCController controller, string addr)
         {
             this.addr = addr;
+            this.controller = controller;
         }
 
         /// <summary>
@@ -23,7 +35,10 @@ namespace mujinplccs
         /// </summary>
         public void Start()
         {
-
+            this.Stop();
+            this.isok = true;
+            this.thread = new Thread(new ThreadStart(this._ServerThread));
+            this.thread.Start();
         }
 
         /// <summary>
@@ -31,28 +46,99 @@ namespace mujinplccs
         /// </summary>
         public void Stop()
         {
-
-        }
-
-        public bool IsRunning()
-        {
-            return false;
-        }
-
-        private void ServerThread()
-        {
-            using (Context context = new Context())
-            using (Socket socket = context.Socket(SocketType.REP))
+            this.isok = false;
+            if (this.thread != null)
             {
-                socket.Bind(this.addr);
+                this.thread.Join();
+                this.thread = null;
+            }
+        }
 
-                while (this.isok)
+        public bool IsRunning
+        {
+            get { return false; }
+        }
+
+        public string Address
+        {
+            get { return this.addr; }
+        }
+
+        public PLCController Controller
+        {
+            get { return this.controller; }
+        }
+
+        private void _ServerThread()
+        {
+            Console.WriteLine("Thread started.");
+            while (this.isok)
+            {
+                try
                 {
-                    byte[] data = socket.Recv();
+                    using (Context context = new Context())
+                    using (Socket socket = context.Socket(SocketType.REP))
+                    {
+                        // bind to address
+                        socket.Bind(this.addr);
 
-                    socket.Send(data);
+                        // prepare poll item
+                        PollItem[] pollItems = new PollItem[] {
+                            socket.CreatePollItem(IOMultiPlex.POLLIN)
+                        };
+
+                        // loop until told to stop or when exception is thrown
+                        while (this.isok)
+                        {
+                            // wait for 50 ms
+                            if (Context.Poller(pollItems, 50000) > 0) {
+                                this._RecvAndSend(socket);
+                            }
+                        }
+                    }
+                }
+                catch (ZMQ.Exception e)
+                {
+                    // recover from zmq error by re-creating socket
+                    // TODO: log here
+                    Console.WriteLine("Encountered ZMQ error: {0}, will re-create socket.", e);
                 }
             }
+        }
+
+        private void _RecvAndSend(Socket socket)
+        {
+            byte[] rawdata = socket.Recv(SendRecvOpt.NOBLOCK);
+            string jsonstring = System.Text.Encoding.UTF8.GetString(rawdata);
+            PLCResponse response = null;
+            try
+            {
+                PLCRequest request = JsonConvert.DeserializeObject<PLCRequest>(jsonstring, jsonSettings);
+                lock (this) {
+                    response = this.controller.Process(request);
+                }
+            }
+            catch (PLCException e)
+            {
+                // reply with an error
+                response = new PLCResponse {
+                    Error = new PLCResponse.PLCError { Type = e.Code, Desc = e.Message },
+                };
+            }
+            catch (System.Exception e)
+            {
+                // reply with an error
+                response = new PLCResponse {
+                    Error = new PLCResponse.PLCError { Type = "unkown", Desc = e.Message },
+                };
+            }
+            
+            // serialize to json and send
+            if (response == null) {
+                response = new PLCResponse();
+            }
+            string serialized = JsonConvert.SerializeObject(response, Formatting.None, jsonSettings);
+            socket.Send(System.Text.Encoding.UTF8.GetBytes(serialized));
         }
     }
 }
