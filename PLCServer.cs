@@ -111,7 +111,7 @@ namespace mujinplccs
                 {
                     // recover from zmq error by re-creating socket
                     // TODO: log here
-                    Console.WriteLine("Encountered ZMQ error: {0}, errno: {0}, will re-create socket.", e.Message, e.ErrorCode);
+                    Console.WriteLine("Encountered ZMQ error: {0}, will re-create socket.", e.Message);
                 }
             }
         }
