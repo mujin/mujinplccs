@@ -7,21 +7,36 @@ namespace mujinplccs
     {
         private PLCMemory memory = null;
 
+        /// <summary>
+        /// Controling logic for PLC. Handles requests after they are parsed.
+        /// </summary>
         public PLCController() : this(new PLCMemory())
         {
         }
 
+        /// <summary>
+        /// Controling logic for PLC. Handles requests after they are parsed.
+        /// </summary>
+        /// <param name="memory">A custom PLC memory instance.</param>
         public PLCController(PLCMemory memory)
         {
             this.memory = memory;
         }
 
+        /// <summary>
+        /// Get or set the underlying PLC memory.
+        /// </summary>
         public PLCMemory Memory
         {
             get { return this.memory; }
             set { lock (this) { this.memory = value; } }
         }
 
+        /// <summary>
+        /// Process a PLC request and return a PLC response.
+        /// </summary>
+        /// <param name="request">Request received from network.</param>
+        /// <returns>Response to be sent back to the client.</returns>
         public PLCResponse Process(PLCRequest request)
         {
             switch (request.Command)

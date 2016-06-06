@@ -8,6 +8,9 @@ using Newtonsoft.Json;
 
 namespace mujinplccs
 {
+    /// <summary>
+    /// A ZMQ server that hosts the PLC controller.
+    /// </summary>
     public sealed class PLCServer
     {
         private PLCController controller = null;
@@ -20,10 +23,19 @@ namespace mujinplccs
             MissingMemberHandling = MissingMemberHandling.Ignore,
         };
 
+        /// <summary>
+        /// Creates the ZMQ server.
+        /// </summary>
+        /// <param name="addr">Endpoint to listen on. For example, "tcp://*:5555".</param>
         public PLCServer(string addr) : this(new PLCController(), addr)
         {
         }
 
+        /// <summary>
+        /// Creates the ZMQ server.
+        /// </summary>
+        /// <param name="controller">A custom instance of PLC controller</param>
+        /// <param name="addr">Endpoint to listen on. For example, "tcp://*:5555".</param>
         public PLCServer(PLCController controller, string addr)
         {
             this.addr = addr;
@@ -54,19 +66,29 @@ namespace mujinplccs
             }
         }
 
+        /// <summary>
+        /// Whether ZMQ server is currently running.
+        /// </summary>
         public bool IsRunning
         {
-            get { return false; }
+            get { return this.thread != null && this.thread.IsAlive; }
         }
 
+        /// <summary>
+        /// Listening endpoint of the ZMQ server.
+        /// </summary>
         public string Address
         {
             get { return this.addr; }
         }
 
+        /// <summary>
+        /// Underlying controller instance.
+        /// </summary>
         public PLCController Controller
         {
             get { return this.controller; }
+            set { lock(this) { this.controller = value; } }
         }
 
         private void _ServerThread()
