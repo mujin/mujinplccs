@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
-using ZMQ;
+using NetMQ;
+using NetMQ.Sockets;
 using Newtonsoft.Json;
 
 namespace mujinplccs
@@ -94,44 +95,34 @@ namespace mujinplccs
             {
                 try
                 {
-                    using (Context context = new Context())
-                    using (Socket socket = context.Socket(SocketType.REP))
+                    using (var socket = new ResponseSocket(this.addr))
                     {
-                        // bind to address
-                        socket.Bind(this.addr);
-
-                        // prepare poll item
-                        PollItem[] pollItems = new PollItem[] {
-                            socket.CreatePollItem(IOMultiPlex.POLLIN)
-                        };
-
                         // loop until told to stop or when exception is thrown
                         while (this.isok)
                         {
                             // wait for 50 ms
-                            if (Context.Poller(pollItems, 50000) > 0) {
+                            if (socket.Poll(PollEvents.PollIn, TimeSpan.FromMilliseconds(50)).HasIn()) {
                                 this._RecvAndSend(socket);
                             }
                         }
                     }
                 }
-                catch (ZMQ.Exception e)
+                catch (NetMQException e)
                 {
                     // recover from zmq error by re-creating socket
                     // TODO: log here
-                    Console.WriteLine("Encountered ZMQ error: {0}, errno: {0}, will re-create socket.", e.Message, e.Errno);
+                    Console.WriteLine("Encountered ZMQ error: {0}, errno: {0}, will re-create socket.", e.Message, e.ErrorCode);
                 }
             }
         }
 
-        private void _RecvAndSend(Socket socket)
+        private void _RecvAndSend(ResponseSocket socket)
         {
-            byte[] rawdata = socket.Recv(SendRecvOpt.NOBLOCK);
-            string jsonstring = System.Text.Encoding.UTF8.GetString(rawdata);
+            string received = socket.ReceiveFrameString(System.Text.Encoding.UTF8);
             PLCResponse response = null;
             try
             {
-                PLCRequest request = JsonConvert.DeserializeObject<PLCRequest>(jsonstring, jsonSettings);
+                PLCRequest request = JsonConvert.DeserializeObject<PLCRequest>(received, jsonSettings);
                 lock (this) {
                     response = this.controller.Process(request);
                 }
@@ -156,7 +147,7 @@ namespace mujinplccs
                 response = new PLCResponse();
             }
             string serialized = JsonConvert.SerializeObject(response, Formatting.None, jsonSettings);
-            socket.Send(System.Text.Encoding.UTF8.GetBytes(serialized));
+            socket.SendFrame(System.Text.Encoding.UTF8.GetBytes(serialized));
         }
     }
 }
