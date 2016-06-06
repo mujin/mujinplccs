@@ -1,40 +1,39 @@
 ﻿using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using mujinplccs;
+using Xunit;
 
 namespace mujintestplccs
 {
-    [TestClass]
     public class PLCControllerTests
     {
-        [TestMethod]
+        [Fact]
         public void TestPing()
         {
             PLCController controller = new PLCController();
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandPing };
                 PLCResponse response = controller.Process(request);
-                Assert.IsNull(response.Error);
+                Assert.Null(response.Error);
             }   
         }
 
-        [TestMethod]
+        [Fact]
         public void TestReadWrite()
         {
             PLCController controller = new PLCController();
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead };
                 PLCResponse response = controller.Process(request);
-                Assert.IsNull(response.Error);
-                Assert.IsNull(response.Values);
+                Assert.Null(response.Error);
+                Assert.Null(response.Values);
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead, Keys = new string[] { "test" } };
                 PLCResponse response = controller.Process(request);
-                Assert.IsNull(response.Error);
-                Assert.IsNotNull(response.Values);
-                Assert.AreEqual(response.Values.Count, 0);
+                Assert.Null(response.Error);
+                Assert.NotNull(response.Values);
+                Assert.Equal(response.Values.Count, 0);
             }
 
             {
@@ -42,36 +41,36 @@ namespace mujintestplccs
                 values["test"] = 3.1415926535;
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandWrite, Values = values };
                 PLCResponse response = controller.Process(request);
-                Assert.IsNull(response.Error);
+                Assert.Null(response.Error);
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead, Keys = new string[] { "test" } };
                 PLCResponse response = controller.Process(request);
-                Assert.IsNull(response.Error);
-                Assert.IsNotNull(response.Values);
-                Assert.AreEqual(response.Values.Count, 1);
-                Assert.AreEqual(response.Values["test"], 3.1415926535);
+                Assert.Null(response.Error);
+                Assert.NotNull(response.Values);
+                Assert.Equal(response.Values.Count, 1);
+                Assert.Equal(response.Values["test"], 3.1415926535);
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void TestReadWriteBulk()
         {
             PLCController controller = new PLCController();
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead };
                 PLCResponse response = controller.Process(request);
-                Assert.IsNull(response.Error);
-                Assert.IsNull(response.Values);
+                Assert.Null(response.Error);
+                Assert.Null(response.Values);
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead, Keys = new string[] { "test1", "test2", "test3" } };
                 PLCResponse response = controller.Process(request);
-                Assert.IsNull(response.Error);
-                Assert.IsNotNull(response.Values);
-                Assert.AreEqual(response.Values.Count, 0);
+                Assert.Null(response.Error);
+                Assert.NotNull(response.Values);
+                Assert.Equal(response.Values.Count, 0);
             }
 
             {
@@ -80,21 +79,21 @@ namespace mujintestplccs
                 values["test3"] = true;
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandWrite, Values = values };
                 PLCResponse response = controller.Process(request);
-                Assert.IsNull(response.Error);
+                Assert.Null(response.Error);
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead, Keys = new string[] { "test1", "test2", "test3" } };
                 PLCResponse response = controller.Process(request);
-                Assert.IsNull(response.Error);
-                Assert.IsNotNull(response.Values);
-                Assert.AreEqual(response.Values.Count, 2);
-                Assert.AreEqual(response.Values["test1"], "hello");
-                Assert.AreEqual(response.Values["test3"], true);
+                Assert.Null(response.Error);
+                Assert.NotNull(response.Values);
+                Assert.Equal(response.Values.Count, 2);
+                Assert.Equal(response.Values["test1"], "hello");
+                Assert.Equal(response.Values["test3"], true);
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void TestInvalidCommand()
         {
             PLCController controller = new PLCController();
@@ -103,11 +102,11 @@ namespace mujintestplccs
                 try
                 {
                     controller.Process(request);
-                    Assert.Fail();
+                    Assert.True(false);
                 }
                 catch (PLCInvalidCommandException e)
                 {
-                    Assert.AreEqual(e.Code, "invalid_command");
+                    Assert.Equal(e.Code, "invalid_command");
                 }
             }
 
@@ -116,11 +115,11 @@ namespace mujintestplccs
                 try
                 {
                     controller.Process(request);
-                    Assert.Fail();
+                    Assert.True(false);
                 }
                 catch (PLCInvalidCommandException e)
                 {
-                    Assert.AreEqual(e.Code, "invalid_command");
+                    Assert.Equal(e.Code, "invalid_command");
                 }
             }
 
@@ -129,11 +128,11 @@ namespace mujintestplccs
                 try
                 {
                     controller.Process(request);
-                    Assert.Fail();
+                    Assert.True(false);
                 }
                 catch (PLCInvalidCommandException e)
                 {
-                    Assert.AreEqual(e.Code, "invalid_command");
+                    Assert.Equal(e.Code, "invalid_command");
                 }
             }
         }
