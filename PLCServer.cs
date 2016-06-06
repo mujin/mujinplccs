@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using ZMQ;
 using Newtonsoft.Json;
@@ -93,7 +90,6 @@ namespace mujinplccs
 
         private void _ServerThread()
         {
-            Console.WriteLine("Thread started.");
             while (this.isok)
             {
                 try
@@ -123,7 +119,7 @@ namespace mujinplccs
                 {
                     // recover from zmq error by re-creating socket
                     // TODO: log here
-                    Console.WriteLine("Encountered ZMQ error: {0}, will re-create socket.", e);
+                    Console.WriteLine("Encountered ZMQ error: {0}, errno: {0}, will re-create socket.", e.Message, e.Errno);
                 }
             }
         }
