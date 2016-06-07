@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace mujinplccs
 {
@@ -11,6 +8,10 @@ namespace mujinplccs
     /// </summary>
     public sealed class PLCMemory: Dictionary<string, object>
     {
+        public delegate void Observer(Dictionary<string, object> modifications);
+
+        public event Observer Modified = null;
+
         public PLCMemory(): base()
         {
         }
@@ -22,10 +23,13 @@ namespace mujinplccs
         /// <returns>A dictionary containing the mapping between requested memory addresses and their stored values. If a requested address does not exist in the memory, it will be omitted here.</returns>
         public Dictionary<string, object> Read(string[] keys)
         {
-            Dictionary<string, object> data = new Dictionary<string, object>();
-            lock (this) {
-                foreach (string key in keys) {
-                    if (this.ContainsKey(key)) {
+            var data = new Dictionary<string, object>();
+            lock (this)
+            {
+                foreach (string key in keys)
+                {
+                    if (this.ContainsKey(key))
+                    {
                         data[key] = this[key];
                     }
                 }
@@ -39,10 +43,25 @@ namespace mujinplccs
         /// <param name="data">A dictionary containing the mapping between named memory addresses and their desired values.</param>
         public void Write(Dictionary<string, object> data)
         {
-            lock (this) {
-                foreach (KeyValuePair<string, object> pair in data) {
+            var modifications = new Dictionary<string, object>();
+
+            lock (this)
+            {
+                foreach (var pair in data)
+                {
+                    if (!this.ContainsKey(pair.Key) || !this[pair.Key].Equals(pair.Value))
+                    {
+                        modifications[pair.Key] = pair.Value;
+                    }
                     this[pair.Key] = pair.Value;
                 }
+
+            }
+
+            // notify observers of the modifications
+            if (modifications.Count > 0)
+            {
+                this.Modified?.Invoke(modifications);
             }
         }
     }

@@ -11,7 +11,7 @@ namespace mujinplccs
     /// </summary>
     public sealed class PLCServer
     {
-        private PLCController controller = null;
+        private PLCService service = null;
         private string addr = "";
         private bool isok = true;
         private Thread thread = null;
@@ -25,19 +25,28 @@ namespace mujinplccs
         /// Creates the ZMQ server.
         /// </summary>
         /// <param name="addr">Endpoint to listen on. For example, "tcp://*:5555".</param>
-        public PLCServer(string addr) : this(new PLCController(), addr)
+        public PLCServer(string addr) : this(new PLCService(), addr)
         {
         }
 
         /// <summary>
         /// Creates the ZMQ server.
         /// </summary>
-        /// <param name="controller">A custom instance of PLC controller</param>
+        /// <param name="memory">A custom instance of PLC memory</param>
         /// <param name="addr">Endpoint to listen on. For example, "tcp://*:5555".</param>
-        public PLCServer(PLCController controller, string addr)
+        public PLCServer(PLCMemory memory, string addr) : this(new PLCService(memory), addr)
+        {
+        }
+
+        /// <summary>
+        /// Creates the ZMQ server.
+        /// </summary>
+        /// <param name="service">A custom instance of PLC service</param>
+        /// <param name="addr">Endpoint to listen on. For example, "tcp://*:5555".</param>
+        public PLCServer(PLCService service, string addr)
         {
             this.addr = addr;
-            this.controller = controller;
+            this.service = service;
         }
 
         /// <summary>
@@ -81,12 +90,19 @@ namespace mujinplccs
         }
 
         /// <summary>
-        /// Underlying controller instance.
+        /// Underlying service instance.
         /// </summary>
-        public PLCController Controller
+        public PLCService Service
         {
-            get { return this.controller; }
-            set { lock(this) { this.controller = value; } }
+            get { return this.service; }
+        }
+
+        /// <summary>
+        /// Underlying memory instance.
+        /// </summary>
+        public PLCMemory Memory
+        {
+            get { return this.service.Memory; }
         }
 
         private void _ServerThread()
@@ -122,10 +138,9 @@ namespace mujinplccs
             PLCResponse response = null;
             try
             {
+                // ask service to handle request
                 PLCRequest request = JsonConvert.DeserializeObject<PLCRequest>(received, jsonSettings);
-                lock (this) {
-                    response = this.controller.Process(request);
-                }
+                response = this.service.Handle(request);
             }
             catch (PLCException e)
             {

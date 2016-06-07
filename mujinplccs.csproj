@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PLCController.cs" />
+    <Compile Include="PLCService.cs" />
     <Compile Include="PLCMemory.cs" />
     <Compile Include="PLCException.cs" />
     <Compile Include="PLCRequest.cs" />

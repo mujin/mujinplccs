@@ -4,15 +4,15 @@ using Xunit;
 
 namespace mujintestplccs
 {
-    public class PLCControllerTests
+    public class PLCServiceTests
     {
         [Fact]
         public void TestPing()
         {
-            PLCController controller = new PLCController();
+            PLCService service = new PLCService();
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandPing };
-                PLCResponse response = controller.Process(request);
+                PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
             }   
         }
@@ -20,17 +20,17 @@ namespace mujintestplccs
         [Fact]
         public void TestReadWrite()
         {
-            PLCController controller = new PLCController();
+            PLCService service = new PLCService();
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead };
-                PLCResponse response = controller.Process(request);
+                PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
                 Assert.Null(response.Values);
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead, Keys = new string[] { "test" } };
-                PLCResponse response = controller.Process(request);
+                PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
                 Assert.NotNull(response.Values);
                 Assert.Equal(response.Values.Count, 0);
@@ -40,13 +40,13 @@ namespace mujintestplccs
                 Dictionary<string, object> values = new Dictionary<string, object>();
                 values["test"] = 3.1415926535;
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandWrite, Values = values };
-                PLCResponse response = controller.Process(request);
+                PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead, Keys = new string[] { "test" } };
-                PLCResponse response = controller.Process(request);
+                PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
                 Assert.NotNull(response.Values);
                 Assert.Equal(response.Values.Count, 1);
@@ -57,17 +57,17 @@ namespace mujintestplccs
         [Fact]
         public void TestReadWriteBulk()
         {
-            PLCController controller = new PLCController();
+            PLCService service = new PLCService();
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead };
-                PLCResponse response = controller.Process(request);
+                PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
                 Assert.Null(response.Values);
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead, Keys = new string[] { "test1", "test2", "test3" } };
-                PLCResponse response = controller.Process(request);
+                PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
                 Assert.NotNull(response.Values);
                 Assert.Equal(response.Values.Count, 0);
@@ -78,13 +78,13 @@ namespace mujintestplccs
                 values["test1"] = "hello";
                 values["test3"] = true;
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandWrite, Values = values };
-                PLCResponse response = controller.Process(request);
+                PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandRead, Keys = new string[] { "test1", "test2", "test3" } };
-                PLCResponse response = controller.Process(request);
+                PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
                 Assert.NotNull(response.Values);
                 Assert.Equal(response.Values.Count, 2);
@@ -96,12 +96,12 @@ namespace mujintestplccs
         [Fact]
         public void TestInvalidCommand()
         {
-            PLCController controller = new PLCController();
+            PLCService service = new PLCService();
             {
                 PLCRequest request = new PLCRequest { };
                 try
                 {
-                    controller.Process(request);
+                    service.Handle(request);
                     Assert.True(false);
                 }
                 catch (PLCInvalidCommandException e)
@@ -114,7 +114,7 @@ namespace mujintestplccs
                 PLCRequest request = new PLCRequest { Command = "" };
                 try
                 {
-                    controller.Process(request);
+                    service.Handle(request);
                     Assert.True(false);
                 }
                 catch (PLCInvalidCommandException e)
@@ -127,7 +127,7 @@ namespace mujintestplccs
                 PLCRequest request = new PLCRequest { Command = "unknown" };
                 try
                 {
-                    controller.Process(request);
+                    service.Handle(request);
                     Assert.True(false);
                 }
                 catch (PLCInvalidCommandException e)
