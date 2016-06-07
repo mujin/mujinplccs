@@ -6,13 +6,13 @@ namespace mujinplccs
     /// <summary>
     /// PLCMemory is a key-value store that supports locked PLC memory read write operations.
     /// </summary>
-    public sealed class PLCMemory: Dictionary<string, object>
+    public sealed class PLCMemory : Dictionary<string, object>
     {
-        public delegate void Observer(Dictionary<string, object> modifications);
+        public delegate void Observer(IDictionary<string, object> modifications);
 
         public event Observer Modified = null;
 
-        public PLCMemory(): base()
+        public PLCMemory() : base()
         {
         }
 
@@ -41,7 +41,7 @@ namespace mujinplccs
         /// Atomically write PLC memory.
         /// </summary>
         /// <param name="data">A dictionary containing the mapping between named memory addresses and their desired values.</param>
-        public void Write(Dictionary<string, object> data)
+        public void Write(IDictionary<string, object> data)
         {
             var modifications = new Dictionary<string, object>();
 

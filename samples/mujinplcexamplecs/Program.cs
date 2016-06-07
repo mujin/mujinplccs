@@ -13,18 +13,33 @@ namespace mujinplcexamplecs
         {
             var memory = new PLCMemory();
             var controller = new PLCController(memory);
+            var logic = new PLCLogic(controller);
             var server = new PLCServer(memory, "tcp://*:5555");
             server.Start();
 
             Console.WriteLine("Server started and listening on {0} ...", server.Address);
 
-            for (int i = 0; i < 10; i++)
+            try
             {
-                Console.WriteLine("Waiting for start order cycle ...");
-                controller.WaitFor("startOrderCycle", true);
 
-                Console.WriteLine("Waiting until stop order cycle ...");
-                controller.WaitUntil("stopOrderCycle", true);
+                Console.WriteLine("Starting order cycle ...");
+                var status = logic.StartOrderCycle("123", "123", 10);
+                Console.WriteLine("Order cycle started. numLeftInOrder = {0}, mumLeftInSupply = {1}.", status.NumLeftInOrder, status.NumLeftInSupply);
+
+                while (true)
+                {
+                    status = logic.CheckOrderCycleStatus();
+                    if (!status.IsRunningOrderCycle)
+                    {
+                        Console.WriteLine("Cycle finished. {0}", status.OrderCycleFinishCode);
+                        break;
+                    }
+                    Console.WriteLine("Cycle running. numLeftInOrder = {0}, mumLeftInSupply = {1}.", status.NumLeftInOrder, status.NumLeftInSupply);
+                }
+            }
+            catch (PLCLogic.PLCError e)
+            {
+                Console.WriteLine("PLC Error. {0}. {1}x{2}", e.Message, (int)e.ErrorCode, e.DetailedErrorCode);
             }
 
             Console.WriteLine("Press any key to exit.");

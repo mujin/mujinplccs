@@ -14,7 +14,7 @@ namespace mujintestplccs
                 PLCRequest request = new PLCRequest { Command = PLCRequest.CommandPing };
                 PLCResponse response = service.Handle(request);
                 Assert.Null(response.Error);
-            }   
+            }
         }
 
         [Fact]

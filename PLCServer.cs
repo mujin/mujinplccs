@@ -117,7 +117,8 @@ namespace mujinplccs
                         while (this.isok)
                         {
                             // wait for 50 ms
-                            if (socket.Poll(PollEvents.PollIn, TimeSpan.FromMilliseconds(50)).HasIn()) {
+                            if (socket.Poll(PollEvents.PollIn, TimeSpan.FromMilliseconds(50)).HasIn())
+                            {
                                 this._RecvAndSend(socket);
                             }
                         }
@@ -145,20 +146,23 @@ namespace mujinplccs
             catch (PLCException e)
             {
                 // reply with an error
-                response = new PLCResponse {
+                response = new PLCResponse
+                {
                     Error = new PLCResponse.PLCError { Type = e.Code, Desc = e.Message },
                 };
             }
             catch (System.Exception e)
             {
                 // reply with an error
-                response = new PLCResponse {
+                response = new PLCResponse
+                {
                     Error = new PLCResponse.PLCError { Type = "unkown", Desc = e.Message },
                 };
             }
-            
+
             // serialize to json and send
-            if (response == null) {
+            if (response == null)
+            {
                 response = new PLCResponse();
             }
             string serialized = JsonConvert.SerializeObject(response, Formatting.None, jsonSettings);

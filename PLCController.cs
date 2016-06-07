@@ -8,6 +8,7 @@ namespace mujinplccs
     public sealed class PLCController
     {
         private PLCMemory memory = null;
+        private DateTime timestamp = DateTime.Now;
         private Dictionary<string, object> state = new Dictionary<string, object>();
         private BlockingCollection<KeyValuePair<string, object>> queue = new BlockingCollection<KeyValuePair<string, object>>(
             new ConcurrentQueue<KeyValuePair<string, object>>()
@@ -30,12 +31,18 @@ namespace mujinplccs
             }
         }
 
-        private void _Enqueue(Dictionary<string, object> modifications)
+        private void _Enqueue(IDictionary<string, object> modifications)
         {
+            lock (this)
+            {
+                // timestamp of last activity
+                this.timestamp = DateTime.Now;
+            }
+
             foreach(var pair in modifications)
             {
                 queue.Add(pair);
-                Console.WriteLine("memory modified: {0} = {1}", pair.Key, pair.Value);
+                // Console.WriteLine("memory modified: {0} = {1}", pair.Key, pair.Value);
             }
         }
 
@@ -51,71 +58,145 @@ namespace mujinplccs
         private KeyValuePair<string, object> _Dequeue(TimeSpan?timeout = null)
         {
             KeyValuePair<string, object> pair;
-            if (timeout != null)
+            while (true)
             {
                 Stopwatch stopwatch = new Stopwatch();
-                if (!queue.TryTake(out pair, timeout.Value))
+                if (queue.TryTake(out pair, TimeSpan.FromMilliseconds(50)))
                 {
+                    // successfully took
+                    break;
+                }
+
+                // subtract timeout and see if we are timed out
+                timeout = timeout?.Subtract(stopwatch.Elapsed);
+                if (timeout.HasValue && timeout <= TimeSpan.Zero)
+                {   
                     throw new TimeoutException();
                 }
-                timeout?.Subtract(stopwatch.Elapsed);
-            }
-            else
-            {
-                pair = queue.Take();
             }
             this.state[pair.Key] = pair.Value;
             return pair;
         }
 
-        public void Clear()
+        public void Sync()
         {
             this._DequeueAll();
         }
 
         public object WaitFor(string key, object value, TimeSpan? timeout = null)
         {
-            var values = new Dictionary<string, object>(1);
-            values[key] = value;
-            return this.WaitFor(values, timeout).Value;
+            return this.WaitFor(new Dictionary<string, object>()
+            {
+                { key, value },
+            }, timeout).Value;
         }
 
-        public KeyValuePair<string, object> WaitFor(Dictionary<string, object> expectations, TimeSpan? timeout = null)
+        public KeyValuePair<string, object> WaitFor(IDictionary<string, object> signals, TimeSpan? timeout = null)
         {
             while (true)
             {
+                Stopwatch stopwatch = new Stopwatch();
                 KeyValuePair<string, object> pair = this._Dequeue(timeout);
-                if (expectations.ContainsKey(pair.Key))
+                if (signals.ContainsKey(pair.Key))
                 {
-                    if (pair.Value.Equals(expectations[pair.Key]))
+                    if (signals[pair.Key] == null || pair.Value.Equals(signals[pair.Key]))
                     {
                         return pair;
                     }
                 }
+                timeout = timeout?.Subtract(stopwatch.Elapsed);
             }
         }
 
-        public object WaitUntil(string key, object value, TimeSpan? timeout = null)
+        public void WaitUntil(string key, object value, TimeSpan? timeout = null)
         {
-            var values = new Dictionary<string, object>(1);
-            values[key] = value;
-            return this.WaitUntil(values, timeout).Value;
+            this.WaitUntil(new Dictionary<string, object>()
+            {
+                { key, value },
+            }, null, timeout);
         }
 
-        public KeyValuePair<string, object> WaitUntil(Dictionary<string, object> expectations, TimeSpan? timeout = null)
+        public void WaitUntil(IDictionary<string, object> expectations, IDictionary<string, object> exceptions = null, TimeSpan? timeout = null)
         {
-            // always clear the queue first
-            this._DequeueAll();
-
-            foreach (var pair in expectations)
+            // combine all signals
+            var all = new Dictionary<string, object>(expectations);
+            if (exceptions != null)
             {
-                if (this.state.ContainsKey(pair.Key) && this.state[pair.Key].Equals(pair.Value))
+                foreach (var pair in exceptions)
                 {
-                    return pair;
+                    all[pair.Key] = pair.Value;
                 }
             }
 
-            return this.WaitFor(expectations, timeout);
+            // always clear the queue first
+            this._DequeueAll();
+
+            while (true)
+            {
+                // check if any exceptions is already met
+                foreach (var pair in exceptions)
+                {
+                    if (this.state.ContainsKey(pair.Key) && this.state[pair.Key].Equals(pair.Value))
+                    {
+                        return;
+                    }
+                }
+                
+                // check if all expectations are already met
+                bool met = true;
+                foreach (var pair in expectations)
+                {
+                    if (!this.state.ContainsKey(pair.Key) || !this.state[pair.Key].Equals(pair.Value))
+                    {
+                        met = false;
+                        break;
+                    }
+                }
+                if (met)
+                {
+                    return;
+                }
+
+                // wait for it to change
+                Stopwatch stopwatch = new Stopwatch();
+                this.WaitFor(all, timeout);
+                timeout = timeout?.Subtract(stopwatch.Elapsed);
+            }
+        }
+
+        public object Get(string key, object defaultValue = null)
+        {
+            if (this.state.ContainsKey(key))
+            {
+                return this.state[key];
+            }
+            return defaultValue;
+        }
+
+        public IDictionary<string, object> Get(string[] keys)
+        {
+            Dictionary<string, object> values = new Dictionary<string, object>();
+            foreach (var key in keys)
+            {
+                if (this.state.ContainsKey(key))
+                {
+                    values[key] = this.state[key];
+                }
+            }
+            return values;
+        }
+
+        public void Set(string key, object value)
+        {
+            this.memory.Write(new Dictionary<string, object>()
+            {
+                { key, value },
+            });
+        }
+
+        public void Set(IDictionary<string, object> values)
+        {
+            this.memory.Write(values);
         }
     }
 }
