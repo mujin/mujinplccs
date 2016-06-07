@@ -11,11 +11,11 @@ namespace mujintestplccs
         {
             PLCMemory memory = new PLCMemory();
             {
-                Assert.Equal(memory.Count, 0);
+                Assert.Equal(0, memory.Count);
 
                 Dictionary<string, object> data = memory.Read(new string[] { "test1", "test2" });
                 Assert.NotNull(data);
-                Assert.Equal(data.Count, 0);
+                Assert.Equal(0, data.Count);
             }
         }
 
@@ -25,24 +25,24 @@ namespace mujintestplccs
             PLCMemory memory = new PLCMemory();
             {
                 memory["test1"] = 10;
-                Assert.Equal(memory.Count, 1);
+                Assert.Equal(1, memory.Count);
 
                 Dictionary<string, object> data = memory.Read(new string[] { "test1", "test2" });
                 Assert.NotNull(data);
-                Assert.Equal(data.Count, 1);
-                Assert.Equal(data["test1"], 10);
+                Assert.Equal(1, data.Count);
+                Assert.Equal(10, data["test1"]);
             }
 
             {
                 memory["test1"] = "10";
                 memory["test2"] = int.MinValue;
-                Assert.Equal(memory.Count, 2);
+                Assert.Equal(2, memory.Count);
 
                 Dictionary<string, object> data = memory.Read(new string[] { "test1", "test2" });
                 Assert.NotNull(data);
-                Assert.Equal(data.Count, 2);
-                Assert.Equal(data["test1"], "10");
-                Assert.Equal(data["test2"], int.MinValue);
+                Assert.Equal(2, data.Count);
+                Assert.Equal("10", data["test1"]);
+                Assert.Equal(int.MinValue, data["test2"]);
             }
         }
 
@@ -51,27 +51,27 @@ namespace mujintestplccs
         {
             PLCMemory memory = new PLCMemory();
             {
-                Assert.Equal(memory.Count, 0);
+                Assert.Equal(0, memory.Count);
 
                 Dictionary<string, object> values = new Dictionary<string, object>();
                 values["test1"] = true;
                 memory.Write(values);
 
-                Assert.Equal(memory.Count, 1);
-                Assert.Equal(memory["test1"], true);
+                Assert.Equal(1, memory.Count);
+                Assert.Equal(true, memory["test1"]);
             }
 
             {
-                Assert.Equal(memory.Count, 1);
+                Assert.Equal(1, memory.Count);
 
                 Dictionary<string, object> values = new Dictionary<string, object>();
                 values["test1"] = "true";
                 values["test2"] = null;
                 memory.Write(values);
 
-                Assert.Equal(memory.Count, 2);
-                Assert.Equal(memory["test1"], "true");
-                Assert.Equal(memory["test2"], null);
+                Assert.Equal(2, memory.Count);
+                Assert.Equal("true", memory["test1"]);
+                Assert.Equal(null, memory["test2"]);
             }
         }
     }

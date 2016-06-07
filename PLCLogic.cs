@@ -162,6 +162,7 @@ namespace mujinplccs
             }, timeout);
             this.controller.Set("startOrderCycle", false);
             this._CheckError();
+            this.controller.Sync();
             return this.GetOrderCycleStatus();
         }
 
@@ -209,6 +210,8 @@ namespace mujinplccs
                 this.controller.WaitFor(new Dictionary<string, object>()
                 {
                     { "isError", true },
+
+                    // listen to any changes in the following addresses
                     { "isRunningOrderCycle", null },
                     { "isRobotMoving", null },
                     { "isSupplyDetectionRunning", null },
