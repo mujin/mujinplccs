@@ -19,7 +19,7 @@ To build, go into the project root directory:
 ::
 
   nuget restore mujinplccs.sln
-  build /p:Configuration=Release mujinplccs.sln
+  xbuild /p:Configuration=Release mujinplccs.sln
 
 Running
 -------
@@ -36,14 +36,14 @@ To connect from ipython:
 
   In [1]: import zmq; ctx = zmq.Context(); socket = ctx.socket(zmq.REQ); socket.connect("tcp://127.0.0.1:5555")
 
-  In [2]: socket.send_json({"command": "read", "keys": ["startcycle", "endcycle", "test"]}); socket.recv_json()
+  In [2]: socket.send_json({"command": "read", "keys": ["startOrderCycle", "stopOrderCycle"]}); socket.recv_json()
   Out[2]: {u'values': {}}
 
-  In [3]: socket.send_json({"command": "write", "values": {"test": 2}}); socket.recv_json()
+  In [3]: socket.send_json({"command": "write", "values": {"startOrderCycle": True}}); socket.recv_json()
   Out[3]: {}
 
-  In [4]: socket.send_json({"command": "read", "keys": ["startcycle", "endcycle", "test"]}); socket.recv_json()
-  Out[4]: {u'values': {u'test': 2}}
+  In [4]: socket.send_json({"command": "read", "keys": ["startOrderCycle", "stopOrderCycle"]}); socket.recv_json()
+  Out[4]: {u'values': {u'startOrderCycle': True}}
 
 Testing
 -------
