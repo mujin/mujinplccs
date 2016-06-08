@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -8,15 +7,25 @@ namespace mujinplccs
     public sealed class PLCController
     {
         private PLCMemory memory = null;
-        private DateTime timestamp = DateTime.Now;
+        private string heartbeatSignal = "";
+        private DateTime lastHeartbeatTimestamp = DateTime.MinValue;
+        private TimeSpan? maxHeartbeatInterval = null;
         private Dictionary<string, object> state = new Dictionary<string, object>();
-        private BlockingCollection<KeyValuePair<string, object>> queue = new BlockingCollection<KeyValuePair<string, object>>(
-            new ConcurrentQueue<KeyValuePair<string, object>>()
+        private BlockingCollection<IDictionary<string, object>> queue = new BlockingCollection<IDictionary<string, object>>(
+            new ConcurrentQueue<IDictionary<string, object>>()
         );
 
-        public PLCController(PLCMemory memory)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="memory"></param>
+        /// <param name="maxHeartbeatInterval">Max time allowed before declaring disconnection when heartbeat signal is not received.</param>
+        /// <param name="heartbeatSignal">Name of the heartbeat signal, default to empty which means any memory modification by anyone is considered as heartbeat.</param>
+        public PLCController(PLCMemory memory, TimeSpan? maxHeartbeatInterval = null, string heartbeatSignal = "")
         {
             this.memory = memory;
+            this.maxHeartbeatInterval = maxHeartbeatInterval;
+            this.heartbeatSignal = heartbeatSignal;
 
             // register observer
             this.memory.Modified += new PLCMemory.Observer(this._Enqueue);
@@ -31,51 +40,74 @@ namespace mujinplccs
             }
         }
 
+        public bool IsConnected
+        {
+            get
+            {
+                if (this.maxHeartbeatInterval.HasValue)
+                {
+                    return DateTime.Now - this.lastHeartbeatTimestamp < this.maxHeartbeatInterval.Value;
+                }
+                return true;
+            }
+        }
+
         private void _Enqueue(IDictionary<string, object> modifications)
         {
-            lock (this)
+            if (this.heartbeatSignal == "" || modifications.ContainsKey(this.heartbeatSignal))
             {
-                // timestamp of last activity
-                this.timestamp = DateTime.Now;
+                lock (this)
+                {
+                    // timestamp of last activity
+                    this.lastHeartbeatTimestamp = DateTime.Now;
+                }
             }
-
-            foreach(var pair in modifications)
-            {
-                queue.Add(pair);
-                // Console.WriteLine("memory modified: {0} = {1}", pair.Key, pair.Value);
-            }
+            queue.Add(modifications);
         }
 
         private void _DequeueAll()
         {
-            KeyValuePair<string, object> pair;
-            while (queue.TryTake(out pair))
+            IDictionary<string, object> modifications;
+            while (queue.TryTake(out modifications))
             {
-                this.state[pair.Key] = pair.Value;
+                foreach (var pair in modifications)
+                {
+                    this.state[pair.Key] = pair.Value;
+                }
             }
         }
 
-        private KeyValuePair<string, object> _Dequeue(TimeSpan?timeout = null)
+        private IDictionary<string, object> _Dequeue(TimeSpan? timeout = null, bool timeoutOnDisconnect = true)
         {
-            KeyValuePair<string, object> pair;
+            var start = DateTime.Now;
+            IDictionary<string, object> modifications;
             while (true)
             {
-                Stopwatch stopwatch = new Stopwatch();
-                if (queue.TryTake(out pair, TimeSpan.FromMilliseconds(50)))
+                if (queue.TryTake(out modifications, TimeSpan.FromMilliseconds(50)))
                 {
                     // successfully took
                     break;
                 }
 
-                // subtract timeout and see if we are timed out
-                timeout = timeout?.Subtract(stopwatch.Elapsed);
-                if (timeout.HasValue && timeout <= TimeSpan.Zero)
-                {   
+                // see if we timed out
+                if (timeout.HasValue && (DateTime.Now - start) > timeout.Value)
+                {
+                    throw new TimeoutException();
+                }
+
+                // if disconnection is detected, immediately timeout.
+                if (timeoutOnDisconnect && !this.IsConnected)
+                {
                     throw new TimeoutException();
                 }
             }
-            this.state[pair.Key] = pair.Value;
-            return pair;
+
+            // apply the modification to local state
+            foreach (var pair in modifications)
+            {
+                this.state[pair.Key] = pair.Value;
+            }
+            return modifications;
         }
 
         public void Sync()
@@ -83,6 +115,27 @@ namespace mujinplccs
             this._DequeueAll();
         }
 
+        /// <summary>
+        /// Wait until IsConnected becomes true.
+        /// </summary>
+        /// <param name="timeout"></param>
+        public void WaitTillConnected(TimeSpan? timeout = null)
+        {
+            while (!this.IsConnected)
+            {
+                var start = DateTime.Now;
+                this._Dequeue(timeout, false);
+                timeout = timeout?.Subtract(DateTime.Now - start);
+            }
+        }
+
+        /// <summary>
+        /// Wait for a key to change to a particular value. If the key is already at such value, wait until it changes and changes back.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         public object WaitFor(string key, object value, TimeSpan? timeout = null)
         {
             return this.WaitFor(new Dictionary<string, object>()
@@ -95,16 +148,19 @@ namespace mujinplccs
         {
             while (true)
             {
-                Stopwatch stopwatch = new Stopwatch();
-                KeyValuePair<string, object> pair = this._Dequeue(timeout);
-                if (signals.ContainsKey(pair.Key))
+                var start = DateTime.Now;
+                var modifications = this._Dequeue(timeout);
+                foreach (var pair in modifications)
                 {
-                    if (signals[pair.Key] == null || pair.Value.Equals(signals[pair.Key]))
+                    if (signals.ContainsKey(pair.Key))
                     {
-                        return pair;
+                        if (signals[pair.Key] == null || pair.Value.Equals(signals[pair.Key]))
+                        {
+                            return pair;
+                        }
                     }
                 }
-                timeout = timeout?.Subtract(stopwatch.Elapsed);
+                timeout = timeout?.Subtract(DateTime.Now - start);
             }
         }
 
@@ -134,14 +190,18 @@ namespace mujinplccs
             while (true)
             {
                 // check if any exceptions is already met
-                foreach (var pair in exceptions)
+                if (exceptions != null)
                 {
-                    if (this.state.ContainsKey(pair.Key) && this.state[pair.Key].Equals(pair.Value))
+                    foreach (var pair in exceptions)
                     {
-                        return;
+                        if (this.state.ContainsKey(pair.Key) && this.state[pair.Key].Equals(pair.Value))
+                        {
+                            return;
+                        }
                     }
+
                 }
-                
+                                
                 // check if all expectations are already met
                 bool met = true;
                 foreach (var pair in expectations)
@@ -158,12 +218,18 @@ namespace mujinplccs
                 }
 
                 // wait for it to change
-                Stopwatch stopwatch = new Stopwatch();
+                var start = DateTime.Now;
                 this.WaitFor(all, timeout);
-                timeout = timeout?.Subtract(stopwatch.Elapsed);
+                timeout = timeout?.Subtract(DateTime.Now - start);
             }
         }
 
+        /// <summary>
+        /// Get value of a key in the current state snapshot of the PLC memory.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
         public object Get(string key, object defaultValue = null)
         {
             if (this.state.ContainsKey(key))
@@ -173,6 +239,11 @@ namespace mujinplccs
             return defaultValue;
         }
 
+        /// <summary>
+        /// Get multiple keys in the current state snapshot of the PLC memory.
+        /// </summary>
+        /// <param name="keys"></param>
+        /// <returns></returns>
         public IDictionary<string, object> Get(string[] keys)
         {
             Dictionary<string, object> values = new Dictionary<string, object>();
@@ -186,6 +257,11 @@ namespace mujinplccs
             return values;
         }
 
+        /// <summary>
+        /// Set key in PLC memory.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
         public void Set(string key, object value)
         {
             this.memory.Write(new Dictionary<string, object>()
@@ -194,6 +270,10 @@ namespace mujinplccs
             });
         }
 
+        /// <summary>
+        /// Set multiple keys in PLC memory.
+        /// </summary>
+        /// <param name="values"></param>
         public void Set(IDictionary<string, object> values)
         {
             this.memory.Write(values);

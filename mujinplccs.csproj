@@ -57,9 +57,6 @@
     <Compile Include="PLCLogic.cs" />
     <Compile Include="PLCService.cs" />
     <Compile Include="PLCMemory.cs" />
-    <Compile Include="PLCException.cs" />
-    <Compile Include="PLCRequest.cs" />
-    <Compile Include="PLCResponse.cs" />
     <Compile Include="PLCServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -4,10 +4,9 @@ using System.Threading;
 
 namespace mujinplccs
 {
-
     public static class Extensions
     {
-        public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
+        public static TValue Get<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
         {
             TValue value;
             return dictionary.TryGetValue(key, out value) ? value : defaultValue;
@@ -16,6 +15,9 @@ namespace mujinplccs
 
     public sealed class PLCLogic
     {
+        /// <summary>
+        /// MUJIN PLC ErrorCode
+        /// </summary>
         public enum PLCErrorCode
         {
             ErrorCodeNotAvailable = 0x0000,
@@ -38,12 +40,12 @@ namespace mujinplccs
             GenericError = 0xffff,
         }
 
-        public sealed class PLCError : PLCException
+        public sealed class PLCError : Exception
         {
             private PLCErrorCode errorCode = PLCErrorCode.ErrorCodeNotAvailable;
             private int detailedErrorCode = 0;
 
-            public PLCError(PLCErrorCode errorCode, int detailedErrorCode = 0) : base("plc_error", String.Format("An error has occurred: {0}", errorCode))
+            public PLCError(PLCErrorCode errorCode, int detailedErrorCode = 0) : base(String.Format("An error has occurred: {0}", errorCode))
             {
                 this.errorCode = errorCode;
                 this.detailedErrorCode = detailedErrorCode;
@@ -60,6 +62,9 @@ namespace mujinplccs
             }
         }
 
+        /// <summary>
+        /// MUJIN PLC OrderCycleFinishCode
+        /// </summary>
         public enum PLCOrderCycleFinishCode
         {
             FinishedNotAvailable = 0x0000,
@@ -98,7 +103,7 @@ namespace mujinplccs
             this.controller = controller;
         }
 
-        public void ClearSignals()
+        public void ClearAllSignals()
         {
             this.controller.Set(new Dictionary<string, object>() {
                 { "startOrderCycle", false },
@@ -114,7 +119,7 @@ namespace mujinplccs
             });
         }
 
-        private void _CheckError()
+        public void CheckError()
         {
             if (this.controller.Get("isError", false).Equals(true))
             {
@@ -131,7 +136,7 @@ namespace mujinplccs
             this.controller.Set("resetError", false);
         }
 
-        public PLCOrderCycleStatus StartOrderCycle(string orderId, string partType, int orderNumber, TimeSpan? timeout = null)
+        public void WaitUntilOrderCycleReady(TimeSpan? timeout = null)
         {
             this.controller.WaitUntil(new Dictionary<string, object>()
             {
@@ -144,31 +149,29 @@ namespace mujinplccs
             {
                 { "isError", true },
             }, timeout);
-            this._CheckError();
+            this.CheckError();
+        }
 
+        public PLCOrderCycleStatus StartOrderCycle(string orderId, string partType, int orderNumber, TimeSpan? timeout = null)
+        {
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", true },
                 { "orderId", orderId },
                 { "partType", orderId },
                 { "orderNumber", orderId },
                 { "startOrderCycle", true },
-                { "supplyContainerChanging", false },
-                { "destContainerChanging", false },
             });
             this.controller.WaitUntil(new Dictionary<string, object>() {
                 { "isRunningOrderCycle", true },
             }, new Dictionary<string, object>() {
                 { "isError", true },
             }, timeout);
-            this.controller.Set("startOrderCycle", false);
-            this._CheckError();
-            this.controller.Sync();
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", false },
+                { "startOrderCycle", false },
+            });
+            this.CheckError();
             return this.GetOrderCycleStatus();
-        }
-
-        public PLCOrderCycleFinishCode GetOrderCycleFinishCode()
-        {
-            return (PLCOrderCycleFinishCode)Convert.ToInt32(this.controller.Get("orderCycleFinishCode", 0));
         }
 
         public PLCOrderCycleStatus GetOrderCycleStatus(TimeSpan? timeout = null)
@@ -189,22 +192,21 @@ namespace mujinplccs
 
             return new PLCOrderCycleStatus
             {
-                IsRunningOrderCycle = Convert.ToBoolean(values.GetValueOrDefault("isRunningOrderCycle", false)),
-                IsRobotMoving = Convert.ToBoolean(values.GetValueOrDefault("isRobotMoving", false)),
-                IsSupplyDetectionRunning = Convert.ToBoolean(values.GetValueOrDefault("isSupplyDetectionRunning", false)),
-                NumLeftInOrder = Convert.ToInt32(values.GetValueOrDefault("numLeftInOrder", 0)),
-                NumLeftInSupply = Convert.ToInt32(values.GetValueOrDefault("numLeftInSupply", 0)),
-                OrderCycleFinishCode = (PLCOrderCycleFinishCode)Convert.ToInt32(values.GetValueOrDefault("orderCycleFinishCode", 0)),
-                CanChangeSupplyContainer = Convert.ToBoolean(values.GetValueOrDefault("canChangeSupplyContainer", false)),
-                CanChangeDestContainer = Convert.ToBoolean(values.GetValueOrDefault("canChangeDestContainer", false)),
-                SupplyContainerNotEmpty = Convert.ToBoolean(values.GetValueOrDefault("supplyContainerNotEmpty", false)),
-                DestContainerFull = Convert.ToBoolean(values.GetValueOrDefault("destContainerFull", false)),
+                IsRunningOrderCycle = Convert.ToBoolean(values.Get("isRunningOrderCycle", false)),
+                IsRobotMoving = Convert.ToBoolean(values.Get("isRobotMoving", false)),
+                IsSupplyDetectionRunning = Convert.ToBoolean(values.Get("isSupplyDetectionRunning", false)),
+                NumLeftInOrder = Convert.ToInt32(values.Get("numLeftInOrder", 0)),
+                NumLeftInSupply = Convert.ToInt32(values.Get("numLeftInSupply", 0)),
+                OrderCycleFinishCode = (PLCOrderCycleFinishCode)Convert.ToInt32(values.Get("orderCycleFinishCode", 0)),
+                CanChangeSupplyContainer = Convert.ToBoolean(values.Get("canChangeSupplyContainer", false)),
+                CanChangeDestContainer = Convert.ToBoolean(values.Get("canChangeDestContainer", false)),
+                SupplyContainerNotEmpty = Convert.ToBoolean(values.Get("supplyContainerNotEmpty", false)),
+                DestContainerFull = Convert.ToBoolean(values.Get("destContainerFull", false)),
             };
         }
 
-        public PLCOrderCycleStatus CheckOrderCycleStatus(TimeSpan? timeout = null)
+        public PLCOrderCycleStatus WaitForOrderCycleStatusChange(TimeSpan? timeout = null)
         {
-            this.controller.Sync();
             if (this.controller.Get("isRunningOrderCycle", false).Equals(true))
             {
                 this.controller.WaitFor(new Dictionary<string, object>()
@@ -223,56 +225,99 @@ namespace mujinplccs
                     { "supplyContainerNotEmpty", null },
                     { "destContainerFull", null },
                 }, timeout);
-                this.controller.Sync();
             }
-            this._CheckError();
+            this.CheckError();
             return this.GetOrderCycleStatus();
         }
 
-        public PLCOrderCycleFinishCode StopOrderCycle(TimeSpan? timeout = null)
+        public PLCOrderCycleStatus WaitUntilOrderCycleFinish(TimeSpan? timeout = null)
         {
-            this.controller.Set("stopOrderCycle", true);
             this.controller.WaitUntil(new Dictionary<string, object>() {
                 { "isRunningOrderCycle", false },
             }, new Dictionary<string, object>() {
                 { "isError", true },
             }, timeout);
-            this.controller.Set("stopOrderCycle", false);
-            this._CheckError();
-            return this.GetOrderCycleFinishCode();
+            this.CheckError();
+            return this.GetOrderCycleStatus();
         }
 
-        public PLCOrderCycleFinishCode StopImmediately(TimeSpan? timeout = null)
+        public PLCOrderCycleStatus StopOrderCycle(TimeSpan? timeout = null)
         {
-            this.controller.Set("stopImmediately", true);
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", true },
+                { "stopOrderCycle", true },
+            });
             this.controller.WaitUntil(new Dictionary<string, object>() {
                 { "isRunningOrderCycle", false },
             }, new Dictionary<string, object>() {
                 { "isError", true },
             }, timeout);
-            this.controller.Set("stopImmediately", false);
-            this._CheckError();
-            return this.GetOrderCycleFinishCode();
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", false },
+                { "stopOrderCycle", false },
+            });
+            this.CheckError();
+            return this.GetOrderCycleStatus();
+        }
+
+        public PLCOrderCycleStatus StopImmediately(TimeSpan? timeout = null)
+        {
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", true },
+                { "stopImmediately", true },
+            });
+            this.controller.WaitUntil(new Dictionary<string, object>() {
+                { "isRunningOrderCycle", false },
+                { "isRobotMoving", false },
+            }, new Dictionary<string, object>() {
+                { "isError", true },
+            }, timeout);
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", false },
+                { "stopImmediately", false },
+            });
+            this.CheckError();
+            return this.GetOrderCycleStatus();
         }
 
         public void StartPreparation(string orderId, string partType, int orderNumber, TimeSpan? timeout = null)
         {
-
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", true },
+                { "prepareOrderId", orderId },
+                { "preparePartType", orderId },
+                { "prepareOrderNumber", orderId },
+                { "startPreparation", true },
+            });
+            // TODO: currently no signal to indicate preparation has started
+            Thread.Sleep(1000);
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", false },
+                { "startPreparation", false },
+            });
+            this.controller.Sync();
+            this.CheckError();
         }
 
         public void StopPreparation(TimeSpan? timeout = null)
         {
-            this.controller.Set("stopPreparation", true);
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", true },
+                { "stopPreparation", true },
+            });
             this.controller.WaitUntil(new Dictionary<string, object>() {
                 { "isRunningOrderCycle", false },
             }, new Dictionary<string, object>() {
                 { "isError", true },
             }, timeout);
-            this.controller.Set("stopPreparation", false);
-            this._CheckError();
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", false },
+                { "stopPreparation", false },
+            });
+            this.CheckError();
         }
 
-        public void MoveToHome(TimeSpan? timeout = null)
+        public void WaitUntilMoveToHomeReady(TimeSpan? timeout = null)
         {
             this.controller.WaitUntil(new Dictionary<string, object>()
             {
@@ -285,8 +330,11 @@ namespace mujinplccs
             {
                 { "isError", true },
             }, timeout);
-            this._CheckError();
+            this.CheckError();
+        }
 
+        public void StartMoveToHome(TimeSpan? timeout = null)
+        {
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", true },
                 { "startMoveToHome", true },
@@ -296,34 +344,73 @@ namespace mujinplccs
             }, new Dictionary<string, object>() {
                 { "isError", true },
             }, timeout);
-            this.controller.Set("startMoveToHome", false);
-            this._CheckError();
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", false },
+                { "startMoveToHome", false },
+            });
+            this.CheckError();
+        }
+
+        public void WaitUntilRobotMoving(bool isRobotMoving, TimeSpan? timeout = null)
+        {
+            this.controller.WaitUntil(new Dictionary<string, object>() {
+                { "isRobotMoving", isRobotMoving },
+            }, new Dictionary<string, object>() {
+                { "isError", true },
+            }, timeout);
+            this.CheckError();
         }
 
         public void StartDetection(TimeSpan? timeout = null)
         {
-
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", true },
+                { "startDetection", true },
+            });
+            this.controller.WaitUntil(new Dictionary<string, object>() {
+                { "isSupplyDetectionRunning", true },
+            }, new Dictionary<string, object>() {
+                { "isError", true },
+            }, timeout);
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", false },
+                { "startDetection", false },
+            });
+            this.CheckError();
         }
 
         public void StopDetection(TimeSpan? timeout = null)
         {
-            this.controller.Set("stopDetection", true);
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", true },
+                { "stopDetection", true },
+            });
             this.controller.WaitUntil(new Dictionary<string, object>() {
                 { "isSupplyDetectionRunning", false },
             }, new Dictionary<string, object>() {
                 { "isError", true },
             }, timeout);
-            this.controller.Set("stopDetection", false);
-            this._CheckError();
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", false },
+                { "stopDetection", false },
+            });
+            this.CheckError();
         }
 
         public void StopGripper(TimeSpan? timeout = null)
         {
-            this.controller.Set("stopGripper", true);
-            Thread.Sleep(1);
-            this.controller.Set("stopGripper", false);
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", true },
+                { "stopGripper", true },
+            });
+            // TODO: currently there is no signal to indicate stop gripper command has been received.
+            Thread.Sleep(1000);
+            this.controller.Set(new Dictionary<string, object>() {
+                { "enableCommands", false },
+                { "stopGripper", false },
+            });
             this.controller.Sync();
-            this._CheckError();
+            this.CheckError();
         }
     }
 }

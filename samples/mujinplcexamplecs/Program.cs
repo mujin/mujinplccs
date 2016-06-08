@@ -28,7 +28,7 @@ namespace mujinplcexamplecs
 
                 while (true)
                 {
-                    status = logic.CheckOrderCycleStatus();
+                    status = logic.WaitForOrderCycleStatusChange();
                     if (!status.IsRunningOrderCycle)
                     {
                         Console.WriteLine("Cycle finished. {0}", status.OrderCycleFinishCode);

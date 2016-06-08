@@ -104,7 +104,7 @@ namespace mujintestplccs
                     service.Handle(request);
                     Assert.True(false);
                 }
-                catch (PLCInvalidCommandException e)
+                catch (PLCService.PLCInvalidCommandException e)
                 {
                     Assert.Equal(e.Code, "invalid_command");
                 }
@@ -117,7 +117,7 @@ namespace mujintestplccs
                     service.Handle(request);
                     Assert.True(false);
                 }
-                catch (PLCInvalidCommandException e)
+                catch (PLCService.PLCInvalidCommandException e)
                 {
                     Assert.Equal(e.Code, "invalid_command");
                 }
@@ -130,7 +130,7 @@ namespace mujintestplccs
                     service.Handle(request);
                     Assert.True(false);
                 }
-                catch (PLCInvalidCommandException e)
+                catch (PLCService.PLCInvalidCommandException e)
                 {
                     Assert.Equal(e.Code, "invalid_command");
                 }

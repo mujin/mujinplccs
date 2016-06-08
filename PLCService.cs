@@ -1,10 +1,107 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace mujinplccs
 {
+    /// <summary>
+    /// A PLC request received on the ZMQ socket. Usually in JSON format.
+    /// </summary>
+    public sealed class PLCRequest
+    {
+        public const string CommandPing = "ping";
+        public const string CommandRead = "read";
+        public const string CommandWrite = "write";
+
+        /// <summary>
+        /// Command type, one of "ping", "read" and "write".
+        /// </summary>
+        [JsonProperty(PropertyName = "command")]
+        public string Command { get; set; }
+
+        /// <summary>
+        /// In case of read command, the list of named addresses to read from.
+        /// </summary>
+        [JsonProperty(PropertyName = "keys")]
+        public string[] Keys { get; set; }
+
+        /// <summary>
+        /// In case of write command, the mapping bewteen named addresses and their desired values.
+        /// </summary>
+        [JsonProperty(PropertyName = "values")]
+        public Dictionary<string, object> Values { get; set; }
+    }
+
+    /// <summary>
+    /// A PLC response to be sent on the ZMQ socket. Can be converted to JSON format.
+    /// </summary>
+    public sealed class PLCResponse
+    {
+        public sealed class PLCError
+        {
+            /// <summary>
+            /// Type of the error.
+            /// </summary>
+            [JsonProperty(PropertyName = "type")]
+            public string Type { get; set; }
+
+            /// <summary>
+            /// Description of the error.
+            /// </summary>
+            [JsonProperty(PropertyName = "desc")]
+            public string Desc { get; set; }
+        }
+
+        /// <summary>
+        /// Error field will be populated if an error has occured
+        /// </summary>
+        [JsonProperty(PropertyName = "error")]
+        public PLCError Error { get; set; }
+
+        public bool ShouldSerializeError()
+        {
+            return this.Error != null;
+        }
+
+        /// <summary>
+        /// In case of read request, this field will contain the returned data as a mapping between named addresses and their values.
+        /// </summary>
+        [JsonProperty(PropertyName = "values")]
+        public Dictionary<string, object> Values { get; set; }
+
+        public bool ShouldSerializeValues()
+        {
+            return this.Values != null;
+        }
+    }
+
     public sealed class PLCService
     {
+        public class PLCServiceException : Exception
+        {
+            private string code;
+
+            public PLCServiceException(string code, string message) : base(message)
+            {
+                this.code = code;
+            }
+
+            public string Code
+            {
+                get { return this.code; }
+            }
+        }
+
+        /// <summary>
+        /// Invalid command exception. Thrown when the received command is missing or unrecognized.
+        /// </summary>
+        public sealed class PLCInvalidCommandException : PLCServiceException
+        {
+            public PLCInvalidCommandException(string message) : base("invalid_command", message)
+            {
+            }
+        }
+
         private PLCMemory memory = null;
 
         /// <summary>

@@ -143,7 +143,7 @@ namespace mujinplccs
                 PLCRequest request = JsonConvert.DeserializeObject<PLCRequest>(received, jsonSettings);
                 response = this.service.Handle(request);
             }
-            catch (PLCException e)
+            catch (PLCService.PLCServiceException e)
             {
                 // reply with an error
                 response = new PLCResponse
