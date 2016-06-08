@@ -12,7 +12,7 @@ namespace mujinplcexamplecs
         static void Main(string[] args)
         {
             var memory = new PLCMemory();
-            var logic = new PLCLogic(new PLCController(memory, TimeSpan.FromSeconds(1)));
+            var logic = new PLCLogic(new PLCController(memory, TimeSpan.FromSeconds(1.0)));
             var server = new PLCServer(memory, "tcp://*:5555");
 
             Console.WriteLine("Starting server to listen on {0} ...", server.Address);

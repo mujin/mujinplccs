@@ -4,7 +4,7 @@ Module Program
 
     Sub Main()
         Dim memory = New PLCMemory()
-        Dim logic = New PLCLogic(New PLCController(memory, TimeSpan.FromSeconds(1)))
+        Dim logic = New PLCLogic(New PLCController(memory, TimeSpan.FromSeconds(1.0)))
         Dim server = New PLCServer(memory, "tcp://*:5555")
 
         Console.WriteLine("Starting server to listen on {0} ...", server.Address)
