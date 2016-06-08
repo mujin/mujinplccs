@@ -1,5 +1,7 @@
 language: csharp
 solution: mujinplccs.sln
 script:
-  - xbuild /tv:12.0 /p:Configuration=Release mujinplccs.sln
+  - xbuild /tv:12.0 /p:Configuration=Release mujinplccs.csproj
+  - xbuild /tv:12.0 /p:Configuration=Release tests/mujintestplccs/mujintestplccs.csproj
   - mono ./packages/xunit.runner.console.2.1.0/tools/xunit.console.exe ./tests/mujintestplccs/bin/Release/mujintestplccs.dll -verbose
+  - xbuild /tv:12.0 /p:Configuration=Release samples/mujinplcexamplecs/mujinplcexamplecs.csproj
