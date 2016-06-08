@@ -99,41 +99,29 @@ namespace mujintestplccs
             PLCService service = new PLCService();
             {
                 PLCRequest request = new PLCRequest { };
-                try
+                var e = Assert.Throws<PLCService.PLCInvalidCommandException>(() =>
                 {
                     service.Handle(request);
-                    Assert.True(false);
-                }
-                catch (PLCService.PLCInvalidCommandException e)
-                {
-                    Assert.Equal(e.Code, "invalid_command");
-                }
+                });
+                Assert.Equal(e.Code, "invalid_command");
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = "" };
-                try
+                var e = Assert.Throws<PLCService.PLCInvalidCommandException>(() =>
                 {
                     service.Handle(request);
-                    Assert.True(false);
-                }
-                catch (PLCService.PLCInvalidCommandException e)
-                {
-                    Assert.Equal(e.Code, "invalid_command");
-                }
+                });
+                Assert.Equal(e.Code, "invalid_command");
             }
 
             {
                 PLCRequest request = new PLCRequest { Command = "unknown" };
-                try
+                var e = Assert.Throws<PLCService.PLCInvalidCommandException>(() =>
                 {
                     service.Handle(request);
-                    Assert.True(false);
-                }
-                catch (PLCService.PLCInvalidCommandException e)
-                {
-                    Assert.Equal(e.Code, "invalid_command");
-                }
+                });
+                Assert.Equal(e.Code, "invalid_command");
             }
         }
     }
