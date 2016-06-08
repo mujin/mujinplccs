@@ -19,7 +19,7 @@ To build, go into the project root directory:
 ::
 
   nuget restore mujinplccs.sln
-  xbuild /p:Configuration=Release mujinplccs.sln
+  xbuild /tv:12.0 /p:Configuration=Release mujinplccs.sln
 
 Running
 -------
@@ -52,6 +52,6 @@ To run the unit tests:
 
 ::
 
-  mono ./packages/xunit.runner.console.2.1.0/tools/xunit.console.x86.exe ./tests/mujintestplccs/bin/Release/mujintestplccs.dll
+  mono ./packages/xunit.runner.console.2.1.0/tools/xunit.console.x86.exe ./tests/mujintestplccs/bin/Release/mujintestplccs.dll -verbose
 
   
