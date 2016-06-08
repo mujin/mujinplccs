@@ -12,18 +12,20 @@ namespace mujinplcexamplecs
         static void Main(string[] args)
         {
             var memory = new PLCMemory();
-            var controller = new PLCController(memory);
-            var logic = new PLCLogic(controller);
+            var logic = new PLCLogic(new PLCController(memory, TimeSpan.FromSeconds(1)));
             var server = new PLCServer(memory, "tcp://*:5555");
+
+            Console.WriteLine("Starting server to listen on {0} ...", server.Address);
             server.Start();
 
-            Console.WriteLine("Server started and listening on {0} ...", server.Address);
+            Console.WriteLine("Waiting for controller connection ...");
+            logic.WaitUntilConnected();
+            Console.WriteLine("Controller connected.");
 
             try
             {
-
                 Console.WriteLine("Starting order cycle ...");
-                var status = logic.StartOrderCycle("123", "123", 10);
+                var status = logic.StartOrderCycle("123", "coffeebox", 10);
                 Console.WriteLine("Order cycle started. numLeftInOrder = {0}, mumLeftInSupply = {1}.", status.NumLeftInOrder, status.NumLeftInSupply);
 
                 while (true)

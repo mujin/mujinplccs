@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{0E9635CC-9C72-4238-8EC5-267C75B03A87}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <StartupObject>mujinplcexamplevb.main</StartupObject>
+    <StartupObject>mujinplcexamplevb.Program</StartupObject>
     <RootNamespace>mujinplcexamplevb</RootNamespace>
     <AssemblyName>mujinplcexamplevb</AssemblyName>
     <FileAlignment>512</FileAlignment>
@@ -69,7 +69,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="main.vb" />
+    <Compile Include="Program.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>

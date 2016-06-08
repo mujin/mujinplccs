@@ -35,14 +35,14 @@ namespace mujintestplccs
                 {
                     Assert.Throws<TimeoutException>(() =>
                     {
-                        controller.WaitTillConnected(timeout);
+                        controller.WaitUntilConnected(timeout);
                     });
                 }
             }
             else
             {
                 Assert.Equal(true, controller.IsConnected);
-                controller.WaitTillConnected(timeout);
+                controller.WaitUntilConnected(timeout);
             }
 
             Assert.Throws<TimeoutException>(() =>

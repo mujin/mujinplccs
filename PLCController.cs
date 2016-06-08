@@ -119,7 +119,7 @@ namespace mujinplccs
         /// Wait until IsConnected becomes true.
         /// </summary>
         /// <param name="timeout"></param>
-        public void WaitTillConnected(TimeSpan? timeout = null)
+        public void WaitUntilConnected(TimeSpan? timeout = null)
         {
             while (!this.IsConnected)
             {

@@ -119,6 +119,11 @@ namespace mujinplccs
             });
         }
 
+        public void WaitUntilConnected(TimeSpan? timeout = null)
+        {
+            this.controller.WaitUntilConnected(timeout);
+        }
+
         public void CheckError()
         {
             if (this.controller.Get("isError", false).Equals(true))
