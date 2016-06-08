@@ -40,6 +40,9 @@ namespace mujinplccs
             GenericError = 0xffff,
         }
 
+        /// <summary>
+        /// PLCError is raised when an error code is set by MUJIN controller.
+        /// </summary>
         public sealed class PLCError : Exception
         {
             private PLCErrorCode errorCode = PLCErrorCode.ErrorCodeNotAvailable;
@@ -51,11 +54,17 @@ namespace mujinplccs
                 this.detailedErrorCode = detailedErrorCode;
             }
 
+            /// <summary>
+            /// MUJIN PLC Error Code
+            /// </summary>
             public PLCErrorCode ErrorCode
             {
                 get { return this.errorCode; }
             }
 
+            /// <summary>
+            /// When ErrorCode is RobotError, DetailedErrorCode contains the error code returned by robot controller.
+            /// </summary>
             public int DetailedErrorCode
             {
                 get { return this.detailedErrorCode; }
@@ -82,27 +91,76 @@ namespace mujinplccs
             FinishedGenericFailure = 0xffff,
         }
 
+        /// <summary>
+        /// MUJIN order cycle status information.
+        /// </summary>
         public sealed class PLCOrderCycleStatus
         {
+            /// <summary>
+            /// Whether the order cycle is currently running.
+            /// </summary>
             public bool IsRunningOrderCycle { get; set; }
+
+            /// <summary>
+            /// Whether the robot is currently moving.
+            /// </summary>
             public bool IsRobotMoving { get; set; }
+
+            /// <summary>
+            /// Whether detection is currently running.
+            /// </summary>
             public bool IsSupplyDetectionRunning { get; set; }
+
+            /// <summary>
+            /// Number of items left in order to be picked.
+            /// </summary>
             public int NumLeftInOrder { get; set; }
+
+            /// <summary>
+            /// Number of items detected in the source container.
+            /// </summary>
             public int NumLeftInSupply { get; set; }
+
+            /// <summary>
+            /// MUJIN PLC OrderCycleFinishCode.
+            /// </summary>
             public PLCOrderCycleFinishCode OrderCycleFinishCode { get; set; }
+
+            /// <summary>
+            /// Whether source container can be safely moved at the moment.
+            /// </summary>
             public bool CanChangeSupplyContainer { get; set; }
+
+            /// <summary>
+            /// Whether destination container can be safely moved at the moment.
+            /// </summary>
             public bool CanChangeDestContainer { get; set; }
+
+            /// <summary>
+            /// Whether source container is currently empty.
+            /// </summary>
             public bool SupplyContainerNotEmpty { get; set; }
+
+            /// <summary>
+            /// Whether destination container is currently full.
+            /// </summary>
             public bool DestContainerFull { get; set; }
         }
 
         private PLCController controller = null;
 
+        /// <summary>
+        /// MUJIN specific PLC logic implementation.
+        /// </summary>
+        /// <param name="controller">An instance of PLCController.</param>
         public PLCLogic(PLCController controller)
         {
             this.controller = controller;
         }
 
+        /// <summary>
+        /// Clear all signals to the MUJIN controller. Set them all to false.
+        /// </summary>
         public void ClearAllSignals()
         {
             this.controller.Set(new Dictionary<string, object>() {
@@ -119,11 +177,18 @@ namespace mujinplccs
             });
         }
 
+        /// <summary>
+        /// Block until connection from MUJIN controller is detected.
+        /// </summary>
+        /// <param name="timeout"></param>
         public void WaitUntilConnected(TimeSpan? timeout = null)
         {
             this.controller.WaitUntilConnected(timeout);
         }
 
+        /// <summary>
+        /// Check if there is an error set by MUJIN controller in the current state. If so, raise a PLCError exception. 
+        /// </summary>
         public void CheckError()
         {
             if (this.controller.Get("isError", false).Equals(true))
@@ -134,13 +199,27 @@ namespace mujinplccs
             }
         }
 
+        /// <summary>
+        /// Reset error on MUJIN controller. Block until error is reset.
+        /// </summary>
+        /// <param name="timeout"></param>
         public void ResetError(TimeSpan? timeout = null)
         {
             this.controller.Set("resetError", true);
-            this.controller.WaitUntil("isError", false, timeout);
-            this.controller.Set("resetError", false);
+            try
+            {
+                this.controller.WaitUntil("isError", false, timeout);
+            }
+            finally
+            {
+                this.controller.Set("resetError", false);
+            }
         }
 
+        /// <summary>
+        /// Block until MUJIN controller is ready to start order cycle.
+        /// </summary>
+        /// <param name="timeout"></param>
         public void WaitUntilOrderCycleReady(TimeSpan? timeout = null)
         {
             this.controller.WaitUntil(new Dictionary<string, object>()
@@ -157,6 +236,14 @@ namespace mujinplccs
             this.CheckError();
         }
 
+        /// <summary>
+        /// Start order cycle. Block until MUJIN controller acknowledge the start command.
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <param name="partType"></param>
+        /// <param name="orderNumber"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         public PLCOrderCycleStatus StartOrderCycle(string orderId, string partType, int orderNumber, TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
@@ -166,19 +253,30 @@ namespace mujinplccs
                 { "orderNumber", orderId },
                 { "startOrderCycle", true },
             });
-            this.controller.WaitUntil(new Dictionary<string, object>() {
-                { "isRunningOrderCycle", true },
-            }, new Dictionary<string, object>() {
-                { "isError", true },
-            }, timeout);
-            this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", false },
-                { "startOrderCycle", false },
-            });
+            try
+            {
+                this.controller.WaitUntil(new Dictionary<string, object>() {
+                    { "isRunningOrderCycle", true },
+                }, new Dictionary<string, object>() {
+                    { "isError", true },
+                }, timeout);
+            }
+            finally
+            {
+                this.controller.Set(new Dictionary<string, object>() {
+                    { "enableCommands", false },
+                    { "startOrderCycle", false },
+                });
+            }
             this.CheckError();
             return this.GetOrderCycleStatus();
         }
 
+        /// <summary>
+        /// Gather order cycle status information in the current state.
+        /// </summary>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         public PLCOrderCycleStatus GetOrderCycleStatus(TimeSpan? timeout = null)
         {
             var values = this.controller.Get(new string[]
@@ -210,6 +308,11 @@ namespace mujinplccs
             };
         }
 
+        /// <summary>
+        /// Block until values in order cycle status changes.
+        /// </summary>
+        /// <param name="timeout"></param>
+        /// <returns>Order cycle status information in the current state.</returns>
         public PLCOrderCycleStatus WaitForOrderCycleStatusChange(TimeSpan? timeout = null)
         {
             if (this.controller.Get("isRunningOrderCycle", false).Equals(true))
@@ -235,6 +338,11 @@ namespace mujinplccs
             return this.GetOrderCycleStatus();
         }
 
+        /// <summary>
+        /// Block until MUJIN controller finishes the order cycle.
+        /// </summary>
+        /// <param name="timeout"></param>
+        /// <returns>Order cycle status information in the finish state.</returns>
         public PLCOrderCycleStatus WaitUntilOrderCycleFinish(TimeSpan? timeout = null)
         {
             this.controller.WaitUntil(new Dictionary<string, object>() {
@@ -246,45 +354,72 @@ namespace mujinplccs
             return this.GetOrderCycleStatus();
         }
 
+        /// <summary>
+        /// Signal MUJIN controller to stop order cycle and block until it is stopped.
+        /// </summary>
+        /// <param name="timeout"></param>
+        /// <returns>Order cycle status information in the current state.</returns>
         public PLCOrderCycleStatus StopOrderCycle(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", true },
                 { "stopOrderCycle", true },
             });
-            this.controller.WaitUntil(new Dictionary<string, object>() {
-                { "isRunningOrderCycle", false },
-            }, new Dictionary<string, object>() {
-                { "isError", true },
-            }, timeout);
-            this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", false },
-                { "stopOrderCycle", false },
-            });
+            try
+            {
+                this.controller.WaitUntil(new Dictionary<string, object>() {
+                    { "isRunningOrderCycle", false },
+                }, new Dictionary<string, object>() {
+                    { "isError", true },
+                }, timeout);
+            }
+            finally
+            {
+                this.controller.Set(new Dictionary<string, object>() {
+                    { "enableCommands", false },
+                    { "stopOrderCycle", false },
+                });
+            }
             this.CheckError();
             return this.GetOrderCycleStatus();
         }
 
-        public PLCOrderCycleStatus StopImmediately(TimeSpan? timeout = null)
+        /// <summary>
+        /// Stop the current operation on MUJIN controller immediately.
+        /// </summary>
+        /// <param name="timeout"></param>
+        public void StopImmediately(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", true },
                 { "stopImmediately", true },
             });
-            this.controller.WaitUntil(new Dictionary<string, object>() {
-                { "isRunningOrderCycle", false },
-                { "isRobotMoving", false },
-            }, new Dictionary<string, object>() {
-                { "isError", true },
-            }, timeout);
-            this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", false },
-                { "stopImmediately", false },
-            });
+            try
+            {
+                this.controller.WaitUntil(new Dictionary<string, object>() {
+                    { "isRunningOrderCycle", false },
+                    { "isRobotMoving", false },
+                }, new Dictionary<string, object>() {
+                    { "isError", true },
+                }, timeout);
+            }
+            finally
+            {
+                this.controller.Set(new Dictionary<string, object>() {
+                    { "enableCommands", false },
+                    { "stopImmediately", false },
+                });
+            }
             this.CheckError();
-            return this.GetOrderCycleStatus();
         }
 
+        /// <summary>
+        /// Signal to start the preparation cycle on MUJIN controller.
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <param name="partType"></param>
+        /// <param name="orderNumber"></param>
+        /// <param name="timeout"></param>
         public void StartPreparation(string orderId, string partType, int orderNumber, TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
@@ -304,17 +439,18 @@ namespace mujinplccs
             this.CheckError();
         }
 
+        /// <summary>
+        /// Signal to stop the preparation cycle on MUJIN controller.
+        /// </summary>
+        /// <param name="timeout"></param>
         public void StopPreparation(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", true },
                 { "stopPreparation", true },
             });
-            this.controller.WaitUntil(new Dictionary<string, object>() {
-                { "isRunningOrderCycle", false },
-            }, new Dictionary<string, object>() {
-                { "isError", true },
-            }, timeout);
+            // TODO: currently no signal to indicate preparation has stopped
+            Thread.Sleep(1000);
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", false },
                 { "stopPreparation", false },
@@ -322,6 +458,10 @@ namespace mujinplccs
             this.CheckError();
         }
 
+        /// <summary>
+        /// Block until MUJIN controller is ready to move robot to home position.
+        /// </summary>
+        /// <param name="timeout"></param>
         public void WaitUntilMoveToHomeReady(TimeSpan? timeout = null)
         {
             this.controller.WaitUntil(new Dictionary<string, object>()
@@ -338,24 +478,39 @@ namespace mujinplccs
             this.CheckError();
         }
 
+        /// <summary>
+        /// Signal MUJIN controller to move the robot to its home position. Block until the robot starts moving.
+        /// </summary>
+        /// <param name="timeout"></param>
         public void StartMoveToHome(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", true },
                 { "startMoveToHome", true },
             });
-            this.controller.WaitUntil(new Dictionary<string, object>() {
-                { "isRobotMoving", true },
-            }, new Dictionary<string, object>() {
-                { "isError", true },
-            }, timeout);
-            this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", false },
-                { "startMoveToHome", false },
-            });
+            try
+            {
+                this.controller.WaitUntil(new Dictionary<string, object>() {
+                   { "isRobotMoving", true },
+                }, new Dictionary<string, object>() {
+                    { "isError", true },
+                }, timeout);
+            }
+            finally
+            {
+                this.controller.Set(new Dictionary<string, object>() {
+                    { "enableCommands", false },
+                    { "startMoveToHome", false },
+                });
+            }
             this.CheckError();
         }
 
+        /// <summary>
+        /// Block until the robot moving state is expected.
+        /// </summary>
+        /// <param name="isRobotMoving">true if expecting robot to move, false if expecting robot to stop</param>
+        /// <param name="timeout"></param>
         public void WaitUntilRobotMoving(bool isRobotMoving, TimeSpan? timeout = null)
         {
             this.controller.WaitUntil(new Dictionary<string, object>() {
@@ -366,42 +521,65 @@ namespace mujinplccs
             this.CheckError();
         }
 
+        /// <summary>
+        /// Signal MUJIN controller to start detection. Block until detection is running.
+        /// </summary>
+        /// <param name="timeout"></param>
         public void StartDetection(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", true },
                 { "startDetection", true },
             });
-            this.controller.WaitUntil(new Dictionary<string, object>() {
-                { "isSupplyDetectionRunning", true },
-            }, new Dictionary<string, object>() {
-                { "isError", true },
-            }, timeout);
-            this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", false },
-                { "startDetection", false },
-            });
+            try
+            {
+                this.controller.WaitUntil(new Dictionary<string, object>() {
+                    { "isSupplyDetectionRunning", true },
+                }, new Dictionary<string, object>() {
+                    { "isError", true },
+                }, timeout);
+            }
+            finally
+            {
+                this.controller.Set(new Dictionary<string, object>() {
+                    { "enableCommands", false },
+                    { "startDetection", false },
+                });
+            }
             this.CheckError();
         }
 
+        /// <summary>
+        /// Signal MUJIN controller to stop detection. Block until detection stopped running.
+        /// </summary>
+        /// <param name="timeout"></param>
         public void StopDetection(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", true },
                 { "stopDetection", true },
             });
-            this.controller.WaitUntil(new Dictionary<string, object>() {
-                { "isSupplyDetectionRunning", false },
-            }, new Dictionary<string, object>() {
-                { "isError", true },
-            }, timeout);
-            this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", false },
-                { "stopDetection", false },
-            });
+            try
+            {
+                this.controller.WaitUntil(new Dictionary<string, object>() {
+                    { "isSupplyDetectionRunning", false },
+                }, new Dictionary<string, object>() {
+                    { "isError", true },
+                }, timeout);
+            }
+            finally {
+                this.controller.Set(new Dictionary<string, object>() {
+                    { "enableCommands", false },
+                    { "stopDetection", false },
+                });
+            }
             this.CheckError();
         }
 
+        /// <summary>
+        /// Signal MUJIN controller to power off gripper.
+        /// </summary>
+        /// <param name="timeout"></param>
         public void StopGripper(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {

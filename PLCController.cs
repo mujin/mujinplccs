@@ -40,6 +40,9 @@ namespace mujinplccs
             }
         }
 
+        /// <summary>
+        /// Whether time since last heartbeat is within expectation indicating an active connection.
+        /// </summary>
         public bool IsConnected
         {
             get
@@ -110,6 +113,9 @@ namespace mujinplccs
             return modifications;
         }
 
+        /// <summary>
+        /// Synchronize the local memory snapshot with what has happened already.
+        /// </summary>
         public void Sync()
         {
             this._DequeueAll();
@@ -130,21 +136,28 @@ namespace mujinplccs
         }
 
         /// <summary>
-        /// Wait for a key to change to a particular value. If the key is already at such value, wait until it changes and changes back.
+        /// Wait for a key to change to a particular value.
+        /// Specifically, if the key is already at such value, wait until it changes to something else and then changes back.
+        /// If value is null, then wait for any change to the key.
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <param name="timeout"></param>
-        /// <returns></returns>
-        public object WaitFor(string key, object value, TimeSpan? timeout = null)
+        public void WaitFor(string key, object value, TimeSpan? timeout = null)
         {
-            return this.WaitFor(new Dictionary<string, object>()
+            this.WaitFor(new Dictionary<string, object>()
             {
                 { key, value },
-            }, timeout).Value;
+            }, timeout);
         }
 
-        public KeyValuePair<string, object> WaitFor(IDictionary<string, object> signals, TimeSpan? timeout = null)
+        /// <summary>
+        /// Wait for multiple keys, return as soon as any one key has the expected value.
+        /// If the passed in expected value of a key is null, then wait for any change to that key.
+        /// </summary>
+        /// <param name="signals"></param>
+        /// <param name="timeout"></param>
+        public void WaitFor(IDictionary<string, object> signals, TimeSpan? timeout = null)
         {
             while (true)
             {
@@ -156,7 +169,7 @@ namespace mujinplccs
                     {
                         if (signals[pair.Key] == null || pair.Value.Equals(signals[pair.Key]))
                         {
-                            return pair;
+                            return;
                         }
                     }
                 }
@@ -164,6 +177,13 @@ namespace mujinplccs
             }
         }
 
+        /// <summary>
+        /// Wait until a key is at the expected value.
+        /// If the key is already at such value, return immediately.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <param name="timeout"></param>
         public void WaitUntil(string key, object value, TimeSpan? timeout = null)
         {
             this.WaitUntil(new Dictionary<string, object>()
@@ -172,6 +192,14 @@ namespace mujinplccs
             }, null, timeout);
         }
 
+        /// <summary>
+        /// Wait until multiple keys are ALL at their expected value, OR ANY one key is at its exceptional value.
+        /// If all the keys are already satisfying the expectations, then return immediately.
+        /// If any of the exceptional conditions is met, then return immediately.
+        /// </summary>
+        /// <param name="expectations"></param>
+        /// <param name="exceptions"></param>
+        /// <param name="timeout"></param>
         public void WaitUntil(IDictionary<string, object> expectations, IDictionary<string, object> exceptions = null, TimeSpan? timeout = null)
         {
             // combine all signals
