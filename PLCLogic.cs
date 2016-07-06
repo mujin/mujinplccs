@@ -45,29 +45,29 @@ namespace mujinplccs
         /// </summary>
         public sealed class PLCError : Exception
         {
-            private PLCErrorCode errorCode = PLCErrorCode.ErrorCodeNotAvailable;
-            private int detailedErrorCode = 0;
+            private PLCErrorCode _errorcode = PLCErrorCode.ErrorCodeNotAvailable;
+            private string _detailedErrorCode;
 
-            public PLCError(PLCErrorCode errorCode, int detailedErrorCode = 0) : base(String.Format("An error has occurred: {0}", errorCode))
+            public PLCError(PLCErrorCode errorcode, string detailedErrorCode="") : base(String.Format("Error 0x{0:X} has occurred: {1}", errorcode, detailedErrorCode))
             {
-                this.errorCode = errorCode;
-                this.detailedErrorCode = detailedErrorCode;
+                this._errorcode = errorcode;
+                this._detailedErrorCode = detailedErrorCode;
             }
 
             /// <summary>
             /// MUJIN PLC Error Code
             /// </summary>
-            public PLCErrorCode ErrorCode
+            public PLCErrorCode errorcode
             {
-                get { return this.errorCode; }
+                get { return this._errorcode; }
             }
 
             /// <summary>
             /// When ErrorCode is RobotError, DetailedErrorCode contains the error code returned by robot controller.
             /// </summary>
-            public int DetailedErrorCode
+            public string detailedErrorCode
             {
-                get { return this.detailedErrorCode; }
+                get { return this._detailedErrorCode; }
             }
         }
 
@@ -99,52 +99,47 @@ namespace mujinplccs
             /// <summary>
             /// Whether the order cycle is currently running.
             /// </summary>
-            public bool IsRunningOrderCycle { get; set; }
+            public bool isRunningOrderCycle { get; set; }
 
             /// <summary>
             /// Whether the robot is currently moving.
             /// </summary>
-            public bool IsRobotMoving { get; set; }
+            public bool isRobotMoving { get; set; }
 
             /// <summary>
             /// Whether detection is currently running.
             /// </summary>
-            public bool IsSupplyDetectionRunning { get; set; }
+            public bool location1DetectionRunning { get; set; }
 
             /// <summary>
             /// Number of items left in order to be picked.
             /// </summary>
-            public int NumLeftInOrder { get; set; }
+            public int numLeftInOrder { get; set; }
 
             /// <summary>
             /// Number of items detected in the source container.
             /// </summary>
-            public int NumLeftInSupply { get; set; }
+            public int numLeftInLocation1 { get; set; }
 
             /// <summary>
             /// MUJIN PLC OrderCycleFinishCode.
             /// </summary>
-            public PLCOrderCycleFinishCode OrderCycleFinishCode { get; set; }
+            public PLCOrderCycleFinishCode orderCycleFinishCode { get; set; }
 
             /// <summary>
             /// Whether source container can be safely moved at the moment.
             /// </summary>
-            public bool CanChangeSupplyContainer { get; set; }
+            public bool location1Released { get; set; }
 
             /// <summary>
             /// Whether destination container can be safely moved at the moment.
             /// </summary>
-            public bool CanChangeDestContainer { get; set; }
+            public bool location2Released { get; set; }
 
             /// <summary>
             /// Whether source container is currently empty.
             /// </summary>
-            public bool SupplyContainerNotEmpty { get; set; }
-
-            /// <summary>
-            /// Whether destination container is currently full.
-            /// </summary>
-            public bool DestContainerFull { get; set; }
+            public bool location1NotEmpty { get; set; }
         }
 
         private PLCController controller = null;
@@ -194,9 +189,14 @@ namespace mujinplccs
             if (this.controller.Get("isError", false).Equals(true))
             {
                 var errorcode = (PLCErrorCode)Convert.ToInt32(this.controller.Get("errorcode", 0));
-                var detailedErrorCode = Convert.ToInt32(this.controller.Get("detailedErrorCode", 0));
+                var detailedErrorCode = this.controller.GetString("detailedErrorCode");
                 throw new PLCError(errorcode, detailedErrorCode);
             }
+        }
+
+        public bool IsError()
+        {
+            return this.controller.Get("isError", false).Equals(true);
         }
 
         /// <summary>
@@ -249,8 +249,8 @@ namespace mujinplccs
             this.controller.Set(new Dictionary<string, object>() {
                 { "enableCommands", true },
                 { "orderId", orderId },
-                { "partType", orderId },
-                { "orderNumber", orderId },
+                { "partType", partType },
+                { "orderNumber", orderNumber },
                 { "startOrderCycle", true },
             });
             try
@@ -283,28 +283,26 @@ namespace mujinplccs
             {
                 "isRunningOrderCycle",
                 "isRobotMoving",
-                "isSupplyDetectionRunning",
+                "location1DetectionRunning",
                 "numLeftInOrder",
-                "numLeftInSupply",
+                "numLeftInLocation1",
                 "orderCycleFinishCode",
-                "canChangeSupplyContainer",
-                "canChangeDestContainer",
-                "supplyContainerNotEmpty",
-                "destContainerFull",
+                "location1Released",
+                "location2Released",
+                "location1NotEmpty",
             });
 
             return new PLCOrderCycleStatus
             {
-                IsRunningOrderCycle = Convert.ToBoolean(values.Get("isRunningOrderCycle", false)),
-                IsRobotMoving = Convert.ToBoolean(values.Get("isRobotMoving", false)),
-                IsSupplyDetectionRunning = Convert.ToBoolean(values.Get("isSupplyDetectionRunning", false)),
-                NumLeftInOrder = Convert.ToInt32(values.Get("numLeftInOrder", 0)),
-                NumLeftInSupply = Convert.ToInt32(values.Get("numLeftInSupply", 0)),
-                OrderCycleFinishCode = (PLCOrderCycleFinishCode)Convert.ToInt32(values.Get("orderCycleFinishCode", 0)),
-                CanChangeSupplyContainer = Convert.ToBoolean(values.Get("canChangeSupplyContainer", false)),
-                CanChangeDestContainer = Convert.ToBoolean(values.Get("canChangeDestContainer", false)),
-                SupplyContainerNotEmpty = Convert.ToBoolean(values.Get("supplyContainerNotEmpty", false)),
-                DestContainerFull = Convert.ToBoolean(values.Get("destContainerFull", false)),
+                isRunningOrderCycle = Convert.ToBoolean(values.Get("isRunningOrderCycle", false)),
+                isRobotMoving = Convert.ToBoolean(values.Get("isRobotMoving", false)),
+                location1DetectionRunning = Convert.ToBoolean(values.Get("location1DetectionRunning", false)),
+                numLeftInOrder = Convert.ToInt32(values.Get("numLeftInOrder", 0)),
+                numLeftInLocation1 = Convert.ToInt32(values.Get("numLeftInLocation1", 0)),
+                orderCycleFinishCode = (PLCOrderCycleFinishCode)Convert.ToInt32(values.Get("orderCycleFinishCode", 0)),
+                location1Released = Convert.ToBoolean(values.Get("location1Released", false)),
+                location2Released = Convert.ToBoolean(values.Get("location2Released", false)),
+                location1NotEmpty = Convert.ToBoolean(values.Get("location1NotEmpty", false)),
             };
         }
 
@@ -324,14 +322,13 @@ namespace mujinplccs
                     // listen to any changes in the following addresses
                     { "isRunningOrderCycle", null },
                     { "isRobotMoving", null },
-                    { "isSupplyDetectionRunning", null },
+                    { "location1DetectionRunning", null },
                     { "numLeftInOrder", null },
-                    { "numLeftInSupply", null },
+                    { "numLeftInLocation1", null },
                     { "orderCycleFinishCode", null },
-                    { "canChangeSupplyContainer", null },
-                    { "canChangeDestContainer", null },
-                    { "supplyContainerNotEmpty", null },
-                    { "destContainerFull", null },
+                    { "location1Released", null },
+                    { "location2Released", null },
+                    { "location1NotEmpty", null },
                 }, timeout);
             }
             this.CheckError();
@@ -534,7 +531,7 @@ namespace mujinplccs
             try
             {
                 this.controller.WaitUntil(new Dictionary<string, object>() {
-                    { "isSupplyDetectionRunning", true },
+                    { "location1DetectionRunning", true },
                 }, new Dictionary<string, object>() {
                     { "isError", true },
                 }, timeout);
@@ -562,7 +559,7 @@ namespace mujinplccs
             try
             {
                 this.controller.WaitUntil(new Dictionary<string, object>() {
-                    { "isSupplyDetectionRunning", false },
+                    { "location1DetectionRunning", false },
                 }, new Dictionary<string, object>() {
                     { "isError", true },
                 }, timeout);

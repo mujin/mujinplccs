@@ -17,15 +17,15 @@ Module Program
         Try
             REM Console.WriteLine("Starting order cycle ...")
             Dim status = logic.StartOrderCycle("123", "coffeebox", 10)
-            REM Console.WriteLine("Order cycle started. numLeftInOrder = {0}, mumLeftInSupply = {1}.", status.NumLeftInOrder, status.NumLeftInSupply)
+            REM Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1)
 
             While True
                 status = logic.WaitForOrderCycleStatusChange()
-                If Not status.IsRunningOrderCycle Then
-                    REM Console.WriteLine("Cycle finished. {0}", status.OrderCycleFinishCode)
+                If Not status.isRunningOrderCycle Then
+                    REM Console.WriteLine("Cycle finished. {0}", status.orderCycleFinishCode)
                     Exit While
                 End If
-                REM Console.WriteLine("Cycle running. numLeftInOrder = {0}, mumLeftInSupply = {1}.", status.NumLeftInOrder, status.NumLeftInSupply)
+                REM Console.WriteLine("Cycle running. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1)
             End While
 
         Catch e As PLCLogic.PLCError

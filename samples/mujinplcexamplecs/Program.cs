@@ -12,7 +12,8 @@ namespace mujinplcexamplecs
         static void Main(string[] args)
         {
             var memory = new PLCMemory();
-            var logic = new PLCLogic(new PLCController(memory, TimeSpan.FromSeconds(1.0)));
+            PLCController controller = new PLCController(memory, TimeSpan.FromSeconds(1.0));
+            var logic = new PLCLogic(controller);
             var server = new PLCServer(memory, "tcp://*:5555");
 
             Console.WriteLine("Starting server to listen on {0} ...", server.Address);
@@ -20,28 +21,33 @@ namespace mujinplcexamplecs
 
             Console.WriteLine("Waiting for controller connection ...");
             logic.WaitUntilConnected();
-            Console.WriteLine("Controller connected.");
-
+            Console.WriteLine("Controller connected. Waiting for cycle ready...");
+            logic.WaitUntilOrderCycleReady();
+            
             try
             {
                 Console.WriteLine("Starting order cycle ...");
-                var status = logic.StartOrderCycle("123", "coffeebox", 10);
-                Console.WriteLine("Order cycle started. numLeftInOrder = {0}, mumLeftInSupply = {1}.", status.NumLeftInOrder, status.NumLeftInSupply);
+                if( controller.GetBoolean("isError") ) {
+                    Console.WriteLine("controller is in error 0x{0:X}, resetting", controller.Get("errorcode"));
+                    logic.ResetError();
+                }
+                var status = logic.StartOrderCycle("123", "work1", 1);
+                Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
 
                 while (true)
                 {
                     status = logic.WaitForOrderCycleStatusChange();
-                    if (!status.IsRunningOrderCycle)
+                    if (!status.isRunningOrderCycle)
                     {
-                        Console.WriteLine("Cycle finished. {0}", status.OrderCycleFinishCode);
+                        Console.WriteLine("Cycle finished. {0}", status.orderCycleFinishCode);
                         break;
                     }
-                    Console.WriteLine("Cycle running. numLeftInOrder = {0}, mumLeftInSupply = {1}.", status.NumLeftInOrder, status.NumLeftInSupply);
+                    Console.WriteLine("Cycle running. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
                 }
             }
             catch (PLCLogic.PLCError e)
             {
-                Console.WriteLine("PLC Error. {0}. {1}x{2}", e.Message, (int)e.ErrorCode, e.DetailedErrorCode);
+                Console.WriteLine("PLC Error. {0}", e.Message);
             }
 
             Console.WriteLine("Press any key to exit.");

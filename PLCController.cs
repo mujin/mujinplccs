@@ -260,9 +260,48 @@ namespace mujinplccs
         /// <returns></returns>
         public object Get(string key, object defaultValue = null)
         {
+            Sync();
             if (this.state.ContainsKey(key))
             {
                 return this.state[key];
+            }
+            return defaultValue;
+        }
+
+        /// <summary>
+        /// Get value of a key in the current state snapshot of the PLC memory.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public bool GetBoolean(string key, bool? defaultValue=null)
+        {
+            Sync();
+            if (this.state.ContainsKey(key))
+            {
+                return Convert.ToBoolean(this.state[key]);
+            }
+            if( defaultValue == null ) {
+                throw new ArgumentNullException("default value not specified for boolean");
+            }
+            return defaultValue.Value;
+        }
+
+        /// <summary>
+        /// Get value of a key in the current state snapshot of the PLC memory.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public string GetString(string key, string defaultValue=null)
+        {
+            Sync();
+            if (this.state.ContainsKey(key))
+            {
+                return Convert.ToString(this.state[key]);
+            }
+            if( defaultValue == null ) {
+                throw new ArgumentNullException("default value not specified for string");
             }
             return defaultValue;
         }
@@ -292,6 +331,7 @@ namespace mujinplccs
         /// <param name="value"></param>
         public void Set(string key, object value)
         {
+            this.Sync();
             this.memory.Write(new Dictionary<string, object>()
             {
                 { key, value },
@@ -304,6 +344,7 @@ namespace mujinplccs
         /// <param name="values"></param>
         public void Set(IDictionary<string, object> values)
         {
+            this.Sync();
             this.memory.Write(values);
         }
     }

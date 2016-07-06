@@ -9,7 +9,8 @@ namespace mujinplccs
     public sealed class PLCMemory : Dictionary<string, object>
     {
         public delegate void Observer(IDictionary<string, object> modifications);
-
+        //private DateTime lastHeartbeatTimestamp = DateTime.MinValue;
+        
         public event Observer Modified = null;
 
         public PLCMemory() : base()

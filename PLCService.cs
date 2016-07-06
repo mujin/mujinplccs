@@ -28,7 +28,7 @@ namespace mujinplccs
         /// <summary>
         /// In case of write command, the mapping bewteen named addresses and their desired values.
         /// </summary>
-        [JsonProperty(PropertyName = "values")]
+        [JsonProperty(PropertyName = "keyvalues")]
         public Dictionary<string, object> Values { get; set; }
     }
 
@@ -66,7 +66,7 @@ namespace mujinplccs
         /// <summary>
         /// In case of read request, this field will contain the returned data as a mapping between named addresses and their values.
         /// </summary>
-        [JsonProperty(PropertyName = "values")]
+        [JsonProperty(PropertyName = "keyvalues")]
         public Dictionary<string, object> Values { get; set; }
 
         public bool ShouldSerializeValues()
