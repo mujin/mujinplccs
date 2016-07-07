@@ -4,7 +4,8 @@ Module Program
 
     Sub Main()
         Dim memory = New PLCMemory()
-        Dim logic = New PLCLogic(New PLCController(memory, TimeSpan.FromSeconds(1.0)))
+        Dim controller = New PLCController(memory, TimeSpan.FromSeconds(1.0))
+        Dim logic = New PLCLogic(controller)
         Dim server = New PLCServer(memory, "tcp://*:5555")
 
         REM Console.WriteLine("Starting server to listen on {0} ...", server.Address)
@@ -13,12 +14,22 @@ Module Program
         REM Console.WriteLine("Waiting for controller connection ...")
         logic.WaitUntilConnected()
         REM Console.WriteLine("Controller connected.")
-
+        
         Try
-            REM Console.WriteLine("Starting order cycle ...")
-            Dim status = logic.StartOrderCycle("123", "coffeebox", 10)
-            REM Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1)
+            REM Console.WriteLine("Starting order cycle ...");
+            If controller.GetBoolean("isError") Then
+                REM Console.WriteLine("controller is in error 0x{0:X}, resetting", controller.Get("errorcode"));
+                logic.ResetError();
+            End If
 
+            REM Console.WriteLine("Waiting for cycle ready...");
+            logic.WaitUntilOrderCycleReady();
+
+            REM Console.WriteLine("Starting order cycle ...")
+            controller.Set("robotId",1);
+            Dim status = logic.StartOrderCycle("123", "work1", 1)
+            REM Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1)
+            
             While True
                 status = logic.WaitForOrderCycleStatusChange()
                 If Not status.isRunningOrderCycle Then
@@ -29,7 +40,7 @@ Module Program
             End While
 
         Catch e As PLCLogic.PLCError
-            REM Console.WriteLine("PLC Error. {0}. {1}x{2}", e.Message, CInt(e.ErrorCode), e.DetailedErrorCode)
+            REM Console.WriteLine("PLC Error. {0}.", e.Message)
         End Try
 
         REM Console.WriteLine("Press any key to exit.")

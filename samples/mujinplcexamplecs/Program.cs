@@ -21,9 +21,8 @@ namespace mujinplcexamplecs
 
             Console.WriteLine("Waiting for controller connection ...");
             logic.WaitUntilConnected();
-            Console.WriteLine("Controller connected. Waiting for cycle ready...");
-            logic.WaitUntilOrderCycleReady();
-            
+            Console.WriteLine("Controller connected.");
+                        
             try
             {
                 Console.WriteLine("Starting order cycle ...");
@@ -31,6 +30,12 @@ namespace mujinplcexamplecs
                     Console.WriteLine("controller is in error 0x{0:X}, resetting", controller.Get("errorcode"));
                     logic.ResetError();
                 }
+
+                Console.WriteLine("Waiting for cycle ready...");
+                logic.WaitUntilOrderCycleReady();
+
+
+                controller.Set("robotId",1);
                 var status = logic.StartOrderCycle("123", "work1", 1);
                 Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
 

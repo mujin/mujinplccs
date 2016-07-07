@@ -87,7 +87,7 @@ namespace mujinplccs
             FinishedCommandDisabled = 0x0100,
             FinishedStopped = 0x0101,
             FinishedStoppedImmediately = 0x0102,
-            FinishedPlanningFailure = 0x0100,
+            FinishedPlanningFailure = 0x1000,
             FinishedGenericFailure = 0xffff,
         }
 
