@@ -25,7 +25,6 @@ namespace mujinplcexamplecs
                         
             try
             {
-                Console.WriteLine("Starting order cycle ...");
                 if( controller.GetBoolean("isError") ) {
                     Console.WriteLine("controller is in error 0x{0:X}, resetting", controller.Get("errorcode"));
                     logic.ResetError();
@@ -38,9 +37,19 @@ namespace mujinplcexamplecs
                 
                 Console.WriteLine("Waiting for cycle ready...");
                 logic.WaitUntilOrderCycleReady();
-                
-                controller.Set("robotId",1);
-                var status = logic.StartOrderCycle("123", "work1", 1);
+
+                Console.WriteLine("Starting order cycle ...");
+                PLCLogic.PLCOrderCycleStatus status;
+                if( true ) {
+                    // first work piece
+                    controller.Set("robotId",1);
+                    status = logic.StartOrderCycle("123", "work1", 1);
+                }
+                else {
+                    // for the second work piece do
+                    controller.Set("robotId",2);
+                    status = logic.StartOrderCycle("123", "work2_b", 1);
+                }
                 Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
 
                 while (true)
