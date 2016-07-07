@@ -31,10 +31,14 @@ namespace mujinplcexamplecs
                     logic.ResetError();
                 }
 
+                if( controller.GetBoolean("isRunningOrderCycle") ) {
+                    Console.WriteLine("previous cycle already running, so stop and wait");
+                    logic.StopOrderCycle();
+                }
+                
                 Console.WriteLine("Waiting for cycle ready...");
                 logic.WaitUntilOrderCycleReady();
-
-
+                
                 controller.Set("robotId",1);
                 var status = logic.StartOrderCycle("123", "work1", 1);
                 Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
