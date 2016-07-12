@@ -16,24 +16,24 @@ Module Program
         REM Console.WriteLine("Controller connected.")
         
         Try
-            REM Console.WriteLine("Starting order cycle ...");
+            REM Console.WriteLine("Starting order cycle ...")
             If controller.GetBoolean("isError") Then
-                REM Console.WriteLine("controller is in error 0x{0:X}, resetting", controller.Get("errorcode"));
-                logic.ResetError();
+                REM Console.WriteLine("controller is in error 0x{0:X}, resetting", controller.Get("errorcode"))
+                logic.ResetError()
             End If
 
             If controller.GetBoolean("isRunningOrderCycle") Then
-                REM Console.WriteLine("previous cycle already running, so stop and wait");
-                logic.StopOrderCycle();
+                REM Console.WriteLine("previous cycle already running, so stop and wait")
+                logic.StopOrderCycle()
             End If
 
-            REM Console.WriteLine("Waiting for cycle ready...");
-            logic.WaitUntilOrderCycleReady();
+            REM Console.WriteLine("Waiting for cycle ready...")
+            logic.WaitUntilOrderCycleReady()
 
 
             REM Console.WriteLine("Starting order cycle ...")
             REM For work2 use: controller.Set("robotId",2); StartOrderCycle("123", "work2_b", 1)
-            controller.Set("robotId",1);
+            controller.Set("robotId",1)
             Dim status = logic.StartOrderCycle("123", "work1", 1)
             REM Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1)
             
