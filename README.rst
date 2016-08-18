@@ -12,7 +12,7 @@ http://www.mono-project.com/docs/getting-started/install/linux/
 
 ::
 
-  apt-get install mono nuget
+  apt-get install mono-complete nuget
 
 To build, go into the project root directory:
 
