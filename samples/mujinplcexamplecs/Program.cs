@@ -42,12 +42,12 @@ namespace mujinplcexamplecs
                 PLCLogic.PLCOrderCycleStatus status;
                 if( true ) {
                     // first work piece
-                    controller.Set("robotId",1);
+                    controller.Set("orderRobotId",1);
                     status = logic.StartOrderCycle("123", "work1", 1);
                 }
                 else {
                     // for the second work piece do
-                    controller.Set("robotId",2);
+                    controller.Set("orderRobotId",2);
                     status = logic.StartOrderCycle("123", "work2_b", 1);
                 }
                 Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
