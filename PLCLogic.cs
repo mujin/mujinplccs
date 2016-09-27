@@ -240,16 +240,15 @@ namespace mujinplccs
         /// Start order cycle. Block until MUJIN controller acknowledge the start command.
         /// </summary>
         /// <param name="orderId"></param>
-        /// <param name="partType"></param>
+        /// <param name="orderPartType"></param>
         /// <param name="orderNumber"></param>
         /// <param name="timeout"></param>
         /// <returns></returns>
-        public PLCOrderCycleStatus StartOrderCycle(string orderId, string partType, int orderNumber, TimeSpan? timeout = null)
+        public PLCOrderCycleStatus StartOrderCycle(string orderId, string orderPartType, int orderNumber, TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", true },
                 { "orderId", orderId },
-                { "partType", partType },
+                { "orderPartType", orderPartType },
                 { "orderNumber", orderNumber },
                 { "startOrderCycle", true },
             });
@@ -264,7 +263,6 @@ namespace mujinplccs
             finally
             {
                 this.controller.Set(new Dictionary<string, object>() {
-                    { "enableCommands", false },
                     { "startOrderCycle", false },
                 });
             }
@@ -359,7 +357,6 @@ namespace mujinplccs
         public PLCOrderCycleStatus StopOrderCycle(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", true },
                 { "stopOrderCycle", true },
             });
             try
@@ -373,7 +370,6 @@ namespace mujinplccs
             finally
             {
                 this.controller.Set(new Dictionary<string, object>() {
-                    { "enableCommands", false },
                     { "stopOrderCycle", false },
                 });
             }
@@ -388,7 +384,6 @@ namespace mujinplccs
         public void StopImmediately(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", true },
                 { "stopImmediately", true },
             });
             try
@@ -403,7 +398,6 @@ namespace mujinplccs
             finally
             {
                 this.controller.Set(new Dictionary<string, object>() {
-                    { "enableCommands", false },
                     { "stopImmediately", false },
                 });
             }
@@ -414,13 +408,12 @@ namespace mujinplccs
         /// Signal to start the preparation cycle on MUJIN controller.
         /// </summary>
         /// <param name="orderId"></param>
-        /// <param name="partType"></param>
+        /// <param name="orderPartType"></param>
         /// <param name="orderNumber"></param>
         /// <param name="timeout"></param>
-        public void StartPreparation(string orderId, string partType, int orderNumber, TimeSpan? timeout = null)
+        public void StartPreparation(string orderId, string orderPartType, int orderNumber, TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", true },
                 { "prepareOrderId", orderId },
                 { "preparePartType", orderId },
                 { "prepareOrderNumber", orderId },
@@ -429,7 +422,6 @@ namespace mujinplccs
             // TODO: currently no signal to indicate preparation has started
             Thread.Sleep(1000);
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", false },
                 { "startPreparation", false },
             });
             this.controller.Sync();
@@ -443,13 +435,11 @@ namespace mujinplccs
         public void StopPreparation(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", true },
                 { "stopPreparation", true },
             });
             // TODO: currently no signal to indicate preparation has stopped
             Thread.Sleep(1000);
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", false },
                 { "stopPreparation", false },
             });
             this.CheckError();
@@ -482,7 +472,6 @@ namespace mujinplccs
         public void StartMoveToHome(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", true },
                 { "startMoveToHome", true },
             });
             try
@@ -496,7 +485,6 @@ namespace mujinplccs
             finally
             {
                 this.controller.Set(new Dictionary<string, object>() {
-                    { "enableCommands", false },
                     { "startMoveToHome", false },
                 });
             }
@@ -525,7 +513,6 @@ namespace mujinplccs
         public void StartDetection(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", true },
                 { "startDetection", true },
             });
             try
@@ -539,7 +526,6 @@ namespace mujinplccs
             finally
             {
                 this.controller.Set(new Dictionary<string, object>() {
-                    { "enableCommands", false },
                     { "startDetection", false },
                 });
             }
@@ -553,7 +539,6 @@ namespace mujinplccs
         public void StopDetection(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", true },
                 { "stopDetection", true },
             });
             try
@@ -566,7 +551,6 @@ namespace mujinplccs
             }
             finally {
                 this.controller.Set(new Dictionary<string, object>() {
-                    { "enableCommands", false },
                     { "stopDetection", false },
                 });
             }
@@ -580,13 +564,11 @@ namespace mujinplccs
         public void StopGripper(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", true },
                 { "stopGripper", true },
             });
             // TODO: currently there is no signal to indicate stop gripper command has been received.
             Thread.Sleep(1000);
             this.controller.Set(new Dictionary<string, object>() {
-                { "enableCommands", false },
                 { "stopGripper", false },
             });
             this.controller.Sync();
