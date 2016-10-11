@@ -86,6 +86,12 @@ namespace mujinplccs
             IDictionary<string, object> modifications;
             while (true)
             {
+                // make sure timeout has not already been reached
+                if (timeout.HasValue && timeout.Value < TimeSpan.Zero)
+                {
+                    throw new TimeoutException();
+                }
+
                 if (queue.TryTake(out modifications, TimeSpan.FromMilliseconds(50)))
                 {
                     // successfully took
@@ -131,7 +137,11 @@ namespace mujinplccs
             {
                 var start = DateTime.Now;
                 this._Dequeue(timeout, false);
-                timeout = timeout?.Subtract(DateTime.Now - start);
+
+                if (timeout.HasValue)
+                {
+                    timeout = timeout.Value.Subtract(DateTime.Now - start);
+                }
             }
         }
 
@@ -173,7 +183,11 @@ namespace mujinplccs
                         }
                     }
                 }
-                timeout = timeout?.Subtract(DateTime.Now - start);
+
+                if (timeout.HasValue)
+                {
+                    timeout = timeout.Value.Subtract(DateTime.Now - start);
+                }
             }
         }
 
@@ -248,7 +262,10 @@ namespace mujinplccs
                 // wait for it to change
                 var start = DateTime.Now;
                 this.WaitFor(all, timeout);
-                timeout = timeout?.Subtract(DateTime.Now - start);
+                if (timeout.HasValue)
+                {
+                    timeout = timeout.Value.Subtract(DateTime.Now - start);
+                }
             }
         }
 

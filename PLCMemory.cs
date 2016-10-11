@@ -62,7 +62,10 @@ namespace mujinplccs
             // notify observers of the modifications
             if (modifications.Count > 0)
             {
-                this.Modified?.Invoke(modifications);
+                if (this.Modified != null)
+                {
+                    this.Modified.Invoke(modifications);
+                }
             }
         }
     }
