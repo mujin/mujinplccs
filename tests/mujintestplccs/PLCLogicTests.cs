@@ -52,7 +52,7 @@ namespace mujintestplccs
                     { "numLeftInOrder", orderNumber },
                     { "numLeftInLocation1", supplyNumber },
                 });
-                status = customerLogic.WaitForOrderCycleStatusChange(timeout);
+                status = customerLogic.GetOrderCycleStatus(timeout);
                 Assert.Equal(true, status.isRobotMoving);
                 Assert.Equal(orderNumber, status.numLeftInOrder);
                 Assert.Equal(supplyNumber, status.numLeftInLocation1);
@@ -198,12 +198,12 @@ namespace mujintestplccs
             customerLogic.StopImmediately();
 
             // controller might reset variables
-            mujinController.Set(new Dictionary<string, object>()
-            {
-                { "numLeftInOrder", 0 },
-                { "numLeftInLocation1", 0 },
-                { "orderCycleFinishCode", 0 },
-            });
+            // mujinController.Set(new Dictionary<string, object>()
+            // {
+            //     { "numLeftInOrder", 0 },
+            //     { "numLeftInLocation1", 0 },
+            //     { "orderCycleFinishCode", 0 },
+            // });
 
             status = customerLogic.GetOrderCycleStatus();
             Assert.Equal(false, status.isRunningOrderCycle);

@@ -277,7 +277,7 @@ namespace mujinplccs
         /// <returns></returns>
         public object Get(string key, object defaultValue = null)
         {
-            Sync();
+            this.Sync();
             if (this.state.ContainsKey(key))
             {
                 return this.state[key];
@@ -293,7 +293,7 @@ namespace mujinplccs
         /// <returns></returns>
         public bool GetBoolean(string key, bool? defaultValue=null)
         {
-            Sync();
+            this.Sync();
             if (this.state.ContainsKey(key))
             {
                 return Convert.ToBoolean(this.state[key]);
@@ -312,7 +312,7 @@ namespace mujinplccs
         /// <returns></returns>
         public string GetString(string key, string defaultValue=null)
         {
-            Sync();
+            this.Sync();
             if (this.state.ContainsKey(key))
             {
                 return Convert.ToString(this.state[key]);
@@ -330,6 +330,7 @@ namespace mujinplccs
         /// <returns></returns>
         public IDictionary<string, object> Get(string[] keys)
         {
+            this.Sync();
             Dictionary<string, object> values = new Dictionary<string, object>();
             foreach (var key in keys)
             {

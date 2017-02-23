@@ -189,7 +189,7 @@ namespace mujinplccs
             if (this.controller.Get("isError", false).Equals(true))
             {
                 var errorcode = (PLCErrorCode)Convert.ToInt32(this.controller.Get("errorcode", 0));
-                var detailedErrorCode = this.controller.GetString("detailedErrorCode");
+                var detailedErrorCode = this.controller.GetString("detailedErrorCode", "");
                 throw new PLCError(errorcode, detailedErrorCode);
             }
         }
