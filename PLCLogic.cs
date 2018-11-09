@@ -84,10 +84,29 @@ namespace mujinplccs
             FinishedNoEnvironmentUpdate = 0x0005,
             FinishedDropTargetFailure = 0x0006,
             FinishedTooManyPickFailures = 0x0007,
-            FinishedCommandDisabled = 0x0100,
+            FinishedRobotExecutionError = 0x0008,
+            FinishedNoDestObstacles = 0x0009,
             FinishedStopped = 0x0101,
             FinishedStoppedImmediately = 0x0102,
             FinishedPlanningFailure = 0x1000,
+            FinishedNoValidGrasp = 0x1001,
+            FinishedNoValidDest = 0x1002,
+            FinishedNoValidGraspDestPair = 0x1003,
+            FinishedNoValidPath = 0x1004,
+            FinishedNoValidTargets = 0x1005,
+            FinishedNoValidBarcodeScan = 0x1006,
+            FinishedComputePlanFailure = 0x1007,
+            FinishedCannotGenerateGraspingModel = 0x1008,
+            FinishedContainerNotDetected = 0x2001,
+            FinishedPlaceContainerNotDetected = 0x2002,
+            FinishedBadExpectedDetectionHeight = 0x2003,
+            FinishedCannotComputeFinishPlan = 0xfff7,
+            FinishedUnknownReasonNoError = 0xfff8,
+            FinishedCannotGetState = 0xfff9,
+            FinishedCycleStopCanceled = 0xfffa,
+            FinishedDropOffIsOn = 0xfffb,
+            FinishedBadPartType = 0xfffd,
+            FinishedBadOrderCyclePrecondition = 0xfffe,
             FinishedGenericFailure = 0xffff,
         }
 
@@ -244,10 +263,9 @@ namespace mujinplccs
         /// <param name="orderNumber"></param>
         /// <param name="timeout"></param>
         /// <returns></returns>
-        public PLCOrderCycleStatus StartOrderCycle(string orderId, string orderPartType, int orderNumber, TimeSpan? timeout = null)
+        public PLCOrderCycleStatus StartOrderCycle(string orderPartType, int orderNumber, TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "orderId", orderId },
                 { "orderPartType", orderPartType },
                 { "orderNumber", orderNumber },
                 { "startOrderCycle", true },

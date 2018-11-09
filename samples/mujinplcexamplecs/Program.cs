@@ -22,7 +22,7 @@ namespace mujinplcexamplecs
             Console.WriteLine("Waiting for controller connection ...");
             logic.WaitUntilConnected();
             Console.WriteLine("Controller connected.");
-                        
+
             try
             {
                 if( controller.GetBoolean("isError") ) {
@@ -40,16 +40,12 @@ namespace mujinplcexamplecs
 
                 Console.WriteLine("Starting order cycle ...");
                 PLCLogic.PLCOrderCycleStatus status;
-                if( true ) {
-                    // first work piece
-                    controller.Set("orderRobotId",1);
-                    status = logic.StartOrderCycle("123", "work1", 1);
-                }
-                else {
-                    // for the second work piece do
-                    controller.Set("orderRobotId",2);
-                    status = logic.StartOrderCycle("123", "work2_b", 1);
-                }
+
+
+                // first work piece
+                controller.Set("orderRobotId",1);
+                status = logic.StartOrderCycle("Mr05_milk_copy", 1);
+
                 Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
 
                 while (true)
