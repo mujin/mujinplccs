@@ -37,7 +37,7 @@ namespace mujinplccs
             InvalidOrderNumberError = 0xf003,
             NotRunningError = 0xf004,
             FailedToMoveToError = 0xf009,
-            GenericError = 0xffff,
+            GenericError = 0xffff
         }
 
         /// <summary>
