@@ -291,7 +291,7 @@ namespace mujinplccs
         /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public bool GetBoolean(string key, bool? defaultValue=null)
+        public bool GetBoolean(string key, bool? defaultValue=false)
         {
             this.Sync();
             if (this.state.ContainsKey(key))

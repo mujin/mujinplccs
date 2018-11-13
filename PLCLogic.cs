@@ -263,12 +263,15 @@ namespace mujinplccs
         /// <param name="orderNumber"></param>
         /// <param name="timeout"></param>
         /// <returns></returns>
-        public PLCOrderCycleStatus StartOrderCycle(string orderPartType, int orderNumber, TimeSpan? timeout = null)
+        // public PLCOrderCycleStatus StartOrderCycle(string orderPartType, int orderNumber, int orderPickLocation, string orderPickContainerId, int orderPlaceLocation, string orderPlaceContainerId, TimeSpan? timeout = null)
+        public PLCOrderCycleStatus StartOrderCycle(string orderPartType, int orderNumber, int orderPickLocation, int orderPlaceLocation, TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
                 { "orderPartType", orderPartType },
                 { "orderNumber", orderNumber },
                 { "startOrderCycle", true },
+                { "orderPickLocation", orderPickLocation},
+                { "orderPlaceLocation", orderPlaceLocation}
             });
             try
             {
@@ -314,7 +317,6 @@ namespace mujinplccs
                 isRobotMoving = Convert.ToBoolean(values.Get("isRobotMoving", false)),
                 location1DetectionRunning = Convert.ToBoolean(values.Get("location1DetectionRunning", false)),
                 numLeftInOrder = Convert.ToInt32(values.Get("numLeftInOrder", 0)),
-                numLeftInLocation1 = Convert.ToInt32(values.Get("numLeftInLocation1", 0)),
                 orderCycleFinishCode = (PLCOrderCycleFinishCode)Convert.ToInt32(values.Get("orderCycleFinishCode", 0)),
                 location1Released = Convert.ToBoolean(values.Get("location1Released", false)),
                 location2Released = Convert.ToBoolean(values.Get("location2Released", false)),
@@ -340,7 +342,6 @@ namespace mujinplccs
                     { "isRobotMoving", null },
                     { "location1DetectionRunning", null },
                     { "numLeftInOrder", null },
-                    { "numLeftInLocation1", null },
                     { "orderCycleFinishCode", null },
                     { "location1Released", null },
                     { "location2Released", null },
