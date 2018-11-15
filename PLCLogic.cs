@@ -85,7 +85,6 @@ namespace mujinplccs
             PreparationFinishedGenericError = 0xffff
         }
 
-
         /// <summary>
         /// MUJIN PLC OrderCycleFinishCode
         /// </summary>
@@ -122,7 +121,21 @@ namespace mujinplccs
             FinishedDropOffIsOn = 0xfffb,
             FinishedBadPartType = 0xfffd,
             FinishedBadOrderCyclePrecondition = 0xfffe,
-            FinishedGenericFailure = 0xffff,
+            FinishedGenericFailure = 0xffff
+        }
+
+        /// <summary>
+        /// Mujin Pack Composition Finish Codes
+        /// </summary>
+        public enum PackCompositionFinishCodes
+        {
+            FinishedPackingUnknown = 0x0000,
+            FinishedPackingSuccess = 0x0001,
+            FinishedPackingInvalid = 0x0002,
+            FinishedPackingStopped = 0x0102,
+            FinishedCannotGetState = 0xfff9,
+            FinishedBadOrderCyclePrecondition = 0xfffe,
+            FinishedPackingError = 0xffff
         }
 
         /// <summary>
