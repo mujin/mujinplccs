@@ -72,6 +72,21 @@ namespace mujinplccs
         }
 
         /// <summary>
+        /// MUJIN PLC Preparation FinishCode
+        /// </summary>
+
+        public enum PLCPreparationFinishCode
+        {
+            PreparationNotAvailable = 0x0000,
+            PreparationFinishedSuccess = 0x0001,
+            PreparationFinishedImmediatelyStopped = 0x0102,
+            PreparationFinishedBadPartType = 0xfffd,
+            PreparationFinishedBadOrderCyclePrecondition = 0xfffe,
+            PreparationFinishedGenericError = 0xffff
+        }
+
+
+        /// <summary>
         /// MUJIN PLC OrderCycleFinishCode
         /// </summary>
         public enum PLCOrderCycleFinishCode
