@@ -6,12 +6,14 @@ namespace mujinplccs{
 
     public class Order{
         public Order(){}
+        // some order finish status
         public PLCLogic.PLCOrderCycleFinishCode orderCycleFinishCode;
         public PLCLogic.PLCPreparationCycleFinishCode preparationCycleFinishCode;
 
+        // customer implemented interface
         abstract public void onFinishCodeChangedCallback();
         abstract public void onNumberPutInDestChangedCallback();
-
+        // order info
         public string partType{get; set;}
         public int orderNumber{get; set;}
         public string uniqueId{get; set;}
@@ -25,13 +27,15 @@ namespace mujinplccs{
         public int packInputPartIndex{get; set;}
         public string packFormationComputationName{get; set}
     }
-    public class PLCLocation{
+    public class PLCLocation{ // class to represent location model
         public PLCLocation(string locationName){
             this.locationName = locationName;
         }
-        abstract public void SetStatus();
+        abstract public void SetStatus();  // custom set this status to tell mujin controller if location is ready to pick
         abstract public void Move(string expectedContainerId, string expectedContainerType); // ask conveyor/agv to move. if queue is empty, pass in empty string
-        public int locationIndex{get; set;};
+        public int locationIndex{get; set;}; 
+
+        // location status, e.g. prohibited or not .
         public bool locationProhibited;
         public string containerId;  // used for verification
         public string containerType; // used for verification
