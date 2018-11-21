@@ -20,8 +20,8 @@ namespace mujinplccs{
         public string robotId{get; set;}
         public string placeContainerId{get; set;}
         public string placeContainerType{get; set;}
-        public int placeLocationIndex{get; set;}
-        public int pickLocationIndex{get; set;}
+        public PLCLocation placeLocation{get; set;}
+        public PLCLocation pickLocation{get; set;}
         public int packInputPartIndex{get; set;}
         public string packFormationComputationName{get; set}
     }
@@ -30,8 +30,7 @@ namespace mujinplccs{
             this.locationName = locationName;
         }
         abstract public void SetStatus();
-        abstract public void ChangeLocationContainer(string expectedContainerId, string expectedContainerType); // ask for next container
-        abstract public void Move(); // ask conveyor/agv to move.
+        abstract public void Move(string expectedContainerId, string expectedContainerType); // ask conveyor/agv to move. if queue is empty, pass in empty string
         public int locationIndex{get; set;};
         public bool locationProhibited;
         public string containerId;  // used for verification
