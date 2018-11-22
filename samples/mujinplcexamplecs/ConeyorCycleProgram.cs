@@ -33,7 +33,7 @@ namespace mujinplcexamplecs
                     // busy wait here
                     //....move check move check...
                 }
-                moveDoneCallback(prohibited=False, containerId = nextContainerId, containerType=nextContainerType);
+                processNextOrderDoneCallback(prohibited=False, containerId = nextContainerId, containerType=nextContainerType);
             }
             // ==================================
 
@@ -107,7 +107,7 @@ namespace mujinplcexamplecs
             // for example location1.
 
             Order nextOrder = location1.NextOrder();
-            location1.MoveCallback(nextOrder.containerId, nextOrder.containerType, location1.DelSetStatus); // custeomr can implement this function as aysnc or sync. See example fuction 'Move' above.
+            location1.delProcessNextOrderCallback(nextOrder.containerId, nextOrder.containerType, location1.delProcessNextOrderDoneCallback); // custeomr can implement this function as aysnc or sync. See example fuction 'Move' above.
 
 
             // .....

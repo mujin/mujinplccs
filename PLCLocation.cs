@@ -58,7 +58,7 @@ namespace mujinplccs{
             this.containerId = containerId;
             this.containerType = containerType;
         }
-        public delegate DelProcessNextOrderDoneCallback = Setstatus;
+        public DelProcessNextOrderDoneCallback delProcessNextOrderDoneCallback = Setstatus;
         public string locationName; // description for human to read
         public int locationIndex{get; set;};  // unique index
         public int locationProhibited; // 0: not prohibited, mujin robot can enter; 1: prohibited, mujin robot cannot enter; -1: unknown
