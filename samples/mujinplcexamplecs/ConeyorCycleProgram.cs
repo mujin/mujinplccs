@@ -13,13 +13,13 @@ namespace mujinplcexamplecs
     class Program
     {
 
-        // moveDoneCallback allow mujin to add a callback function when calling Move to customer. Also allow customer to do both sync and async job here.
-        public void Move(string expectedContainerId, string expectedContainerType, PLCLocation.DelMoveDownCallback moveDoneCallback){
+        // moveDoneCallback allow mujin to add a callback function when calling ProcessNextOrder to customer. Also allow customer to do both sync and async job here.
+        public void ProcessNextOrder(string expectedContainerId, string expectedContainerType, PLCLocation.DelProcessNextOrderDoneCallback processNextOrderDoneCallback){
             // customer do something, maybe sync, maybe async
             // customer call doneCallback("id", "type")
 
             // ============= sync version  ==============================
-            string nextContainerId = this.barcodeChecker.ScanContainerBarcode();
+            string nextContainerId = this.barcodeChecker.ScanContainerBarCode();
             string nextContainerType = this.containerPool.GetContainerTypeById(nextContainerId);
 
             if(nextContainerId != expectedContainerId || nextContainerType != expectedContainerType){
@@ -38,7 +38,7 @@ namespace mujinplcexamplecs
             // ==================================
 
             // ==============async wait version =================
-            asyncMove(moveDownCallback);
+            asyncMove(processNextOrderDoneCallback);
             return;
             // =====================
         }
@@ -59,18 +59,18 @@ namespace mujinplcexamplecs
         static void Main(string[] args){
 
             // customer instantiate mujinsystem.
-            MujinSystem pickworker = new MujinSystem();
+            MujinPickWorkerBase pickworker = new MujinPickWorkerBase();
             // customer model the location as Location, set location info etc.
             // maybe create a mapping from location name to location index
 
-            PLCLocation.DelMove moveDelegate = Move;
+            PLCLocation.DelProcessNextOrder processNextOrderCallback = ProcessNextOrder;
             PLCLocation srclocaiton1 = new PLCLocation(locationIndex=1);
             PLCLocation srclocaiton2 = new PLCLocation(locationIndex=2);
             PLCLocation destlocation1 = new PLCLocation(locationIndex=3);
 
-            srclocation1.MoveCallback = Move;
-            srclocation2.MoveCallback = Move;
-            destlocation1.MoveCallback = Move;
+            srclocation1.delProcessNextOrderCallback = processNextOrderCallback;
+            srclocation2.delProcessNextOrderCallback = processNextOrderCallback;
+            destlocation1.delProcessNextOrderCallback = processNextOrderCallback;
 
             // customer add locations to system.
             pickworker.AddLocation(srcLocation1);
