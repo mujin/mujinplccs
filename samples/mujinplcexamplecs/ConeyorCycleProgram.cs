@@ -15,9 +15,10 @@ namespace mujinplcexamplecs
         // customer instantiate mujinsystem.
         MujinSystem system = new MujinSystem();
         // customer model the location as PLCLocation, set location info etc.
-        PLCLocation srclocaiton1 = new PLCLocation(containerId="srccontainer1");
-        PLCLocation srclocaiton2 = new PLCLocation(containerId="srccontainer2");
-        PLCLocation destlocation1 = new PLCLocation(containerId="destlocation1");
+        // maybe create a location mapping from name to index.
+        PLCLocation srclocaiton1 = new PLCLocation(locationIndex=1);
+        PLCLocation srclocaiton2 = new PLCLocation(locationIndex=2);
+        PLCLocation destlocation1 = new PLCLocation(locationIndex=3);
 
         // customer add locations to system. 
         system.AddLocation(srcLocation1);
