@@ -12,50 +12,70 @@ namespace mujinplcexamplecs
 {
     class Program
     {
-        // customer instantiate mujinsystem.
-        MujinSystem pickworker = new MujinSystem();
-        // customer model the location as Location, set location info etc.
-        // maybe create a mapping from location name to location index
-        Location srclocaiton1 = new Location(locationIndex=1);
-        Location srclocaiton2 = new Location(locationIndex=2);
-        Location destlocation1 = new Location(locationIndex=3);
+        public void Move(string expectedContainerId, string expectedContainerType){
 
-        // customer add locations to system. 
-        pickworker.AddLocation(srcLocation1);
-        pickworker.AddLocation(srcLocation2);
-        pickworker.AddLocation(destLocation1);
+            string nextContainerId = this.barcodeChecker.ScanContainerBarcode();
+            string nextContainerType = this.containerPool.GetContainerTypeById(nextContainerId);
 
-        // customer create order class, set orderinfo, such as parttype, picklocation, placelocation etc.
-        Order order1 = new Order("box1", orderPickLocation=srclocation1, orderPlaceLocation=destlocation1);
-        Order order2 = new Order("box2", orderPickLocation=srclocation2, orderPlaceLocation=destlocation1);
+            if(nextContainerId != expectedContainerId || nextContainerType != expectedContainerType){
+                // PANIC!
+                // customer need to deal with exception . cancel order etc..
+            }
+            else{
+                // ready..
+                while(!this.Ready()) // this == current location. maybe a subclass from PLCLocation base class.
+                {
+                    //....move check move check...
+                }
+                this.SetStatus(prohibited=False, containerId = nextContainerId, containerType=nextContainerType);
+            }
+        }
 
-        // customer queue the order into corresponding location
-        pickworker.AddOrderToLocationQueue(order1, srclocation1);
-        pickworker.RemoveOrderFromLocationQueue(order2, srclocation2);
+        static void Main(string[] args){
 
-        pickworker.Start();
-        // MujinSystem finds queue isn't empty, start to deal with order in the queue
-        // ...
-        // After finish one order on locations
-        // Mujin will call location.ProcessNextOrder(location);
-        // this step is for verification
+            // customer instantiate mujinsystem.
+            MujinSystem pickworker = new MujinSystem();
+            // customer model the location as Location, set location info etc.
+            // maybe create a mapping from location name to location index
+            PLCLocation srclocaiton1 = new PLCLocation(locationIndex=1, Move=Move);
+            PLCLocation srclocaiton2 = new PLCLocation(locationIndex=2, Move=Move);
+            PLCLocation destlocation1 = new PLCLocation(locationIndex=3, Move=Move);
 
-        // .....
-        // customer move container (by agv or conveyor) to location, after it finished, customer will call
-        // location.SetStatus(prohibited=False, containerId='123', containerType='sometype');
+            // customer add locations to system.
+            pickworker.AddLocation(srcLocation1);
+            pickworker.AddLocation(srcLocation2);
+            pickworker.AddLocation(destLocation1);
 
-        // Mujin will check if condition is satisifed and start to pickplace order.
+            // customer create order class, set orderinfo, such as parttype, picklocation, placelocation etc.
+            Order order1 = new Order("box1", orderPickLocation=srclocation1, orderPlaceLocation=destlocation1);
+            Order order2 = new Order("box2", orderPickLocation=srclocation2, orderPlaceLocation=destlocation1);
 
-        // Customer need to implement the 1. onFinishCodeChangedCallback and 2. onNumberPutInDestChangedCallback
-        // Mujin will invoke these method after corresponding signal and code changed to notify customer system.
+            // customer queue the order into corresponding location
+            pickworker.AddOrderToLocationQueue(order1, srclocation1);
+            pickworker.RemoveOrderFromLocationQueue(order2, srclocation2);
 
+            pickworker.Start();
+            // MujinSystem finds queue isn't empty, start to deal with order in the queue
+            // ...
+            // After finish one order on locations
+            // Mujin will call location.ProcessNextOrder(location);
+            // this step is for verification
 
-        // in summary, what customer need to do is 
-        // TODO add code
-        // 1. onFinishCodeChangedCallback (order info changed callback)
-        // 2. onNumberPutInDestChangedCallback (order info changed callback
-        // 3. SetStatus
-        // 4. Move
-        // 5. AddOrderToLocationQueue and RemoveOrderFromLocationQueue
+            // .....
+            // customer move container (by agv or conveyor) to location, after it finished, customer will call
+            // location.SetStatus(prohibited=False, containerId='123', containerType='sometype');
+
+            // Mujin will check if condition is satisifed and start to pickplace order.
+
+            // Customer need to implement the 1. onFinishCodeChangedCallback and 2. onNumberPutInDestChangedCallback
+            // Mujin will invoke these method after corresponding signal and code changed to notify customer system.
+
+            // in summary, what customer need to do is 
+            // TODO add code
+            // 1. onFinishCodeChangedCallback (order info changed callback)
+            // 2. onNumberPutInDestChangedCallback (order info changed callback
+            // 3. SetStatus
+            // 4. Move
+            // 5. AddOrderToLocationQueue and RemoveOrderFromLocationQueue
     }
 }
