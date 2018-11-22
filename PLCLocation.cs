@@ -31,10 +31,9 @@ namespace mujinplccs{
         public PLCLocation(string locationName){
             this.locationName = locationName;
         }
-        abstract public void SetStatus();  // custom set this status to tell mujin controller if location is ready to pick
-        abstract public void Move(string expectedContainerId, string expectedContainerType); // ask conveyor/agv to move. if queue is empty, pass in empty string
-        public int locationIndex{get; set;}; 
-
+        abstract public void SetStatus(bool locationProhibited, string containerId, string containerType);  // custom set this status to tell mujin controller if location is ready to pick
+        abstract public void Move(string expectedContainerId, string expectedContainerType); // ask conveyor/agv to move. if queue is empty, pass in empty string. this is a function to tell customer system that we have finished 1. current order, 2. please move conveyor/agv  3. the container info we are expecting according to the queue.
+        public int locationIndex{get; set;};
         // location status, e.g. prohibited or not .
         public bool locationProhibited;
         public string containerId;  // used for verification
