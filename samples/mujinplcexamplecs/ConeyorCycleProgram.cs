@@ -63,7 +63,7 @@ namespace mujinplcexamplecs
             // customer model the location as Location, set location info etc.
             // maybe create a mapping from location name to location index
 
-            PLCLocation.DelProcessNextOrder processNextOrderCallback = ProcessNextOrder;
+            PLCLocation.DelProcessNextOrderCallback processNextOrderCallback = ProcessNextOrder;
             PLCLocation srclocaiton1 = new PLCLocation(locationIndex=1);
             PLCLocation srclocaiton2 = new PLCLocation(locationIndex=2);
             PLCLocation destlocation1 = new PLCLocation(locationIndex=3);
@@ -92,11 +92,13 @@ namespace mujinplcexamplecs
             order3.onNumberPutInDestChangedCallback = delOnNumberPutInDestChanged;
 
             // customer queue the order into corresponding location
-            pickworker.AddOrderToLocationQueue(order1);
-            pickworker.AddOrderToLocationQueue(order2);
-            pickworker.RemoveOrderFromLocationQueue(srclocation2);
+            pickworker.AddOrder(order1);
+            pickworker.AddOrder(order2);
+            pickworker.RemoveOrder(order3);
 
             pickworker.Start();
+            pickworker.Pause();
+            pickworker.Resume();
             // MujinSystem finds queue isn't empty, start to deal with order in the queue
             // ...
             // After finish one order on locations
@@ -123,8 +125,7 @@ namespace mujinplcexamplecs
             // TODO add code
             // 1. onFinishCodeChangedCallback (order info changed callback)
             // 2. onNumberPutInDestChangedCallback (order info changed callback
-            // 3. SetStatus
-            // 4. Move
-            // 5. AddOrderToLocationQueue and RemoveOrderFromLocationQueue
+            // 4. processNextOrder
+            // 5. AddOrder and RemoveOrder 
     }
 }
