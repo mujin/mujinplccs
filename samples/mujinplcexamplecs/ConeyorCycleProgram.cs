@@ -12,7 +12,7 @@ namespace mujinplcexamplecs
 {
     class Program
     {
-        // customer instaniate mujinsystem.
+        // customer instantiate mujinsystem.
         MujinSystem system = new MujinSystem();
         // customer model the location as PLCLocation, set location info etc.
         PLCLocation srclocaiton1 = new PLCLocation(containerId="srccontainer1");
