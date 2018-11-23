@@ -32,9 +32,9 @@ Module Program
 
 
             REM Console.WriteLine("Starting order cycle ...")
-            REM For work2 use: controller.Set("robotId",2); StartOrderCycle("123", "work2_b", 1)
+            REM For work2 use: controller.Set("robotId",2); StartOrderCycle("work2_b", 1, 1, "1", 2, "2")
             controller.Set("robotId",1)
-            Dim status = logic.StartOrderCycle("123", "work1", 1)
+            Dim status = logic.StartOrderCycle("work1", 1, 1, "1", 2, "2")
             REM Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1)
             
             While True

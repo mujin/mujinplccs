@@ -291,14 +291,14 @@ namespace mujinplccs
         /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public bool GetBoolean(string key, bool? defaultValue=null)
+        public bool GetBoolean(string key, bool? defaultValue = null)
         {
             this.Sync();
             if (this.state.ContainsKey(key))
             {
                 return Convert.ToBoolean(this.state[key]);
             }
-            if( defaultValue == null ) {
+            if (defaultValue == null) {
                 throw new ArgumentNullException("default value not specified for boolean");
             }
             return defaultValue.Value;
@@ -310,14 +310,14 @@ namespace mujinplccs
         /// <param name="key"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public string GetString(string key, string defaultValue=null)
+        public string GetString(string key, string defaultValue = null)
         {
             this.Sync();
             if (this.state.ContainsKey(key))
             {
                 return Convert.ToString(this.state[key]);
             }
-            if( defaultValue == null ) {
+            if (defaultValue == null) {
                 throw new ArgumentNullException("default value not specified for string");
             }
             return defaultValue;
