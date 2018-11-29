@@ -244,17 +244,17 @@ namespace mujinplccs
         /// </summary>
         public void CheckError()
         {
-            if (this.controller.Get("isError", false).Equals(true))
+            if (this.controller.Get<bool>("isError", false))
             {
-                var errorcode = (PLCErrorCode)Convert.ToInt32(this.controller.Get("errorcode", 0));
-                var detailedErrorCode = this.controller.GetString("detailedErrorCode", "");
+                var errorcode = (PLCErrorCode)this.controller.Get<int>("errorcode", 0);
+                var detailedErrorCode = this.controller.Get<string>("detailedErrorCode", "");
                 throw new PLCError(errorcode, detailedErrorCode);
             }
         }
 
         public bool IsError()
         {
-            return this.controller.Get("isError", false).Equals(true);
+            return this.controller.Get<bool>("isError", false);
         }
 
         /// <summary>
@@ -342,7 +342,7 @@ namespace mujinplccs
         /// <returns></returns>
         public PLCOrderCycleStatus GetOrderCycleStatus(TimeSpan? timeout = null)
         {
-            var values = this.controller.Get(new string[]
+            var values = this.controller.SyncAndGet(new string[]
             {
                 "isRunningOrderCycle",
                 "isRobotMoving",
@@ -376,7 +376,7 @@ namespace mujinplccs
         /// <returns>Order cycle status information in the current state.</returns>
         public PLCOrderCycleStatus WaitForOrderCycleStatusChange(TimeSpan? timeout = null)
         {
-            if (this.controller.Get("isRunningOrderCycle", false).Equals(true))
+            if (this.controller.Get<bool>("isRunningOrderCycle", false))
             {
                 this.controller.WaitFor(new Dictionary<string, object>()
                 {
@@ -532,7 +532,7 @@ namespace mujinplccs
         /// </summary>
         public PLCPreparationCycleStatus GetPreparationCycleStatus(TimeSpan? timeout = null)
         {
-            var values = this.controller.Get(new string[]
+            var values = this.controller.SyncAndGet(new string[]
             {
                 "isRunningPreparation",
             });

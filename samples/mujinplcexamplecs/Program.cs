@@ -1,77 +1,105 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using mujinplccs;
 
 namespace mujinplcexamplecs
 {
+    class Example : IMaterialHandler {
+        private IPickWorker pickWorker;
+
+        public Example(PLCMemory plcMemory) {
+            this.pickWorker = PickWorkerFactory.Instance().CreatePickWorker(plcMemory, this);
+        }
+
+        public void InjectFakeOrders() {
+            this.pickWorker.QueueOrder("a", new PickWorkerQueueOrderParameters{
+                partType = "facebox",
+                orderNumber = 1,
+                pickLocationIndex = 1,
+                pickContainerId = "00001",
+                placeLocationIndex = 3,
+                placeContainerId = "pallet1",
+                packInputPartIndex = 1,
+            });
+
+            this.pickWorker.QueueOrder("b", new PickWorkerQueueOrderParameters{
+                partType = "facebox",
+                orderNumber = 1,
+                pickLocationIndex = 2,
+                pickContainerId = "00002",
+                placeLocationIndex = 3,
+                placeContainerId = "pallet1",
+                packInputPartIndex = 2,
+            });
+
+            this.pickWorker.QueueOrder("c", new PickWorkerQueueOrderParameters{
+                partType = "facebox",
+                orderNumber = 1,
+                pickLocationIndex = 1,
+                pickContainerId = "00003",
+                placeLocationIndex = 3,
+                placeContainerId = "pallet1",
+                packInputPartIndex = 3,
+            });
+
+            this.pickWorker.QueueOrder("d", new PickWorkerQueueOrderParameters{
+                partType = "facebox",
+                orderNumber = 1,
+                pickLocationIndex = 2,
+                pickContainerId = "00004",
+                placeLocationIndex = 3,
+                placeContainerId = "pallet1",
+
+                packInputPartIndex = 4,
+            });
+        }
+
+        // mujin will request agv to move away and next agv to come
+        // do not return until the new agv is in position and ready
+        public async Task<Tuple<string, string>> MoveLocationAsync(int locationIndex, string expectedContainerId, string expectedContainerType)
+        {
+            // look at locationIndex, depending on definition, it could be source location or dest location
+            // move conveyor or agv, either sync or async, then
+            string actualContainerId = ""; // obtained from barcode scanner
+            string actualContainerType = "";
+
+            // only return when the location is ready for picking or placing
+            return new Tuple<string, string>(actualContainerId, actualContainerType);
+        }
+
+        // mujin will not start next order cycle until customer confirms current order by returning
+        public async Task FinishOrderAsync(string orderUniqueId, PLCLogic.PLCOrderCycleFinishCode orderFinishCode)
+        {
+            // report to server about order
+            // check orderFinishCode to see if you need human intervention
+            return; // return only when okay to continue with next order
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            var memory = new PLCMemory();
-            PLCController controller = new PLCController(memory, TimeSpan.FromSeconds(1.0));
-            var logic = new PLCLogic(controller);
-            var server = new PLCServer(memory, "tcp://*:5555");
+            // init plc memory and production cycle
+            PLCMemory plcMemory = new PLCMemory();
+            
+            // init customer example
+            Example example = new Example(plcMemory);
+            example.InjectFakeOrders(); // TODO: for local testing, need to inject real orders from upper system
 
-            Console.WriteLine("Starting server to listen on {0} ...", server.Address);
-            server.Start();
+            // start server, mujin controller will connect to this server
+            PLCServer plcServer = new PLCServer(plcMemory, "tcp://*:5555");
+            Console.WriteLine("starting server to listen on {0} ...", plcServer.Address);
+            plcServer.Start();
 
-            Console.WriteLine("Waiting for controller connection ...");
-            logic.WaitUntilConnected();
-            Console.WriteLine("Controller connected.");
-                        
-            try
-            {
-                if( controller.GetBoolean("isError") ) {
-                    Console.WriteLine("controller is in error 0x{0:X}, resetting", controller.Get("errorcode"));
-                    logic.ResetError();
-                }
+            // wait until connected (optional)
+            PLCController plcController = new PLCController(plcMemory, TimeSpan.FromSeconds(1.0), "commCounter");
+            plcController.WaitUntilConnected();
+            Console.WriteLine("controller connected");
 
-                if( controller.GetBoolean("isRunningOrderCycle") ) {
-                    Console.WriteLine("previous cycle already running, so stop and wait");
-                    logic.StopOrderCycle();
-                }
-                
-                Console.WriteLine("Waiting for cycle ready...");
-                logic.WaitUntilOrderCycleReady();
-
-                Console.WriteLine("Starting order cycle ...");
-                PLCLogic.PLCOrderCycleStatus status;
-                if( true ) {
-                    // first work piece
-                    controller.Set("orderRobotId",1);
-                    status = logic.StartOrderCycle("work1", 1, 1, "1", 2, "2");
-                }
-                // else {
-                //     // for the second work piece do
-                //     controller.Set("orderRobotId",2);
-                //     status = logic.StartOrderCycle("work2_b", 1, 1, "1", 2, "2");
-                // }
-                Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
-
-                while (true)
-                {
-                    status = logic.WaitForOrderCycleStatusChange();
-                    if (!status.isRunningOrderCycle)
-                    {
-                        Console.WriteLine("Cycle finished. {0}", status.orderCycleFinishCode);
-                        break;
-                    }
-                    Console.WriteLine("Cycle running. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
-                }
-            }
-            catch (PLCLogic.PLCError e)
-            {
-                Console.WriteLine("PLC Error. {0}", e.Message);
-            }
-
-            Console.WriteLine("Press any key to exit.");
-            Console.ReadKey(true);
-
-            server.Stop();
+            // TODO: just testing, change to press enter to exit
+            Thread.Sleep(3600*1000);
         }
     }
 }
