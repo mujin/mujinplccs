@@ -58,6 +58,9 @@
     <Compile Include="PLCService.cs" />
     <Compile Include="PLCMemory.cs" />
     <Compile Include="PLCServer.cs" />
+    <Compile Include="PLCPickWorker.cs" />
+    <Compile Include="PLCPickWorkerImpl.cs" />
+    <Compile Include="PLCProductionCycle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
