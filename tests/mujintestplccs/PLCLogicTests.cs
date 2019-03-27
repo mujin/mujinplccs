@@ -8,10 +8,10 @@ namespace mujintestplccs
     public class PLCLogicTests
     {
         [Theory]
-        [InlineData("coffeebox", 10, 1, "1", 2, "2", 10)]
-        [InlineData("coffeebox", 4, 1, "1", 2, "2", 10)]
-        [InlineData("coffeebox", 10, 1, "1", 2, "2", 9)]
-        public void TestOrderCycle(string orderPartType, int orderNumber, int orderPickLocationIndex, string orderPickContainerId, int orderPlaceLocationIndex, string orderPlaceContainerId, int supplyNumber)
+        [InlineData("coffeebox", 10, 1, "1", 2, "2")]
+        [InlineData("coffeebox", 4, 1, "1", 2, "2")]
+        [InlineData("coffeebox", 10, 1, "1", 2, "2")]
+        public void TestOrderCycle(string orderPartType, int orderNumber, int orderPickLocationIndex, string orderPickContainerId, int orderPlaceLocationIndex, string orderPlaceContainerId)
         {
             var timeout = TimeSpan.FromMilliseconds(100);
             var memory = new PLCMemory();
@@ -36,12 +36,10 @@ namespace mujintestplccs
             {
                 { "isRunningOrderCycle", true },
                 { "numLeftInOrder", orderNumber },
-                { "numLeftInLocation1", supplyNumber },
             });
             var status = customerLogic.StartOrderCycle(orderPartType, orderNumber, orderPickLocationIndex, orderPickContainerId, orderPlaceLocationIndex, orderPlaceContainerId, timeout);
             Assert.Equal(true, status.isRunningOrderCycle);
             Assert.Equal(orderNumber, status.numLeftInOrder);
-            Assert.Equal(supplyNumber, status.numLeftInLocation1);
 
             // check order status
             while (true)
@@ -50,20 +48,17 @@ namespace mujintestplccs
                 {
                     { "isRobotMoving", true },
                     { "numLeftInOrder", orderNumber },
-                    { "numLeftInLocation1", supplyNumber },
                 });
                 status = customerLogic.GetOrderCycleStatus(timeout);
                 Assert.Equal(true, status.isRobotMoving);
                 Assert.Equal(orderNumber, status.numLeftInOrder);
-                Assert.Equal(supplyNumber, status.numLeftInLocation1);
 
-                if (orderNumber <= 0 || supplyNumber <= 0)
+                if (orderNumber <= 0)
                 {
                     break;
                 }
 
                 orderNumber--;
-                supplyNumber--;
             }
 
             if (orderNumber == 0)
@@ -73,14 +68,12 @@ namespace mujintestplccs
                     { "isRobotMoving", false },
                     { "isRunningOrderCycle", false },
                     { "numLeftInOrder", orderNumber },
-                    { "numLeftInLocation1", supplyNumber },
                     { "orderCycleFinishCode", (int)PLCLogic.PLCOrderCycleFinishCode.FinishedOrderComplete },
                 });
                 status = customerLogic.WaitUntilOrderCycleFinish(timeout);
                 Assert.Equal(false, status.isRunningOrderCycle);
                 Assert.Equal(false, status.isRobotMoving);
                 Assert.Equal(0, status.numLeftInOrder);
-                Assert.Equal(supplyNumber, status.numLeftInLocation1);
                 Assert.Equal(PLCLogic.PLCOrderCycleFinishCode.FinishedOrderComplete, status.orderCycleFinishCode);
             }
             else
@@ -90,14 +83,12 @@ namespace mujintestplccs
                     { "isRobotMoving", false },
                     { "isRunningOrderCycle", false },
                     { "numLeftInOrder", orderNumber },
-                    { "numLeftInLocation1", supplyNumber },
                     { "orderCycleFinishCode", (int)PLCLogic.PLCOrderCycleFinishCode.FinishedNoMoreTargets },
                 });
                 status = customerLogic.WaitUntilOrderCycleFinish(timeout);
                 Assert.Equal(false, status.isRunningOrderCycle);
                 Assert.Equal(false, status.isRobotMoving);
                 Assert.Equal(orderNumber, status.numLeftInOrder);
-                Assert.Equal(0, status.numLeftInLocation1);
                 Assert.Equal(PLCLogic.PLCOrderCycleFinishCode.FinishedNoMoreTargets, status.orderCycleFinishCode);
             }
         }
@@ -128,12 +119,10 @@ namespace mujintestplccs
             {
                 { "isRunningOrderCycle", true },
                 { "numLeftInOrder", 1 },
-                { "numLeftInLocation1", 1 },
             });
             var status = customerLogic.StartOrderCycle("orderPartType", 1, 1, "1", 2, "2", timeout);
             Assert.Equal(true, status.isRunningOrderCycle);
             Assert.Equal(1, status.numLeftInOrder);
-            Assert.Equal(1, status.numLeftInLocation1);
 
             // stop order cycle
             mujinController.Set(new Dictionary<string, object>()
@@ -141,7 +130,6 @@ namespace mujintestplccs
                 { "isRobotMoving", false },
                 { "isRunningOrderCycle", false },
                 { "numLeftInOrder", 1 },
-                { "numLeftInLocation1", 1 },
                 { "orderCycleFinishCode", (int)PLCLogic.PLCOrderCycleFinishCode.FinishedStopped },
             });
 
@@ -149,7 +137,6 @@ namespace mujintestplccs
             Assert.Equal(false, status.isRunningOrderCycle);
             Assert.Equal(false, status.isRobotMoving);
             Assert.Equal(1, status.numLeftInOrder);
-            Assert.Equal(1, status.numLeftInLocation1);
             Assert.Equal(PLCLogic.PLCOrderCycleFinishCode.FinishedStopped, status.orderCycleFinishCode);
         }
 
@@ -179,12 +166,10 @@ namespace mujintestplccs
             {
                 { "isRunningOrderCycle", true },
                 { "numLeftInOrder", 1 },
-                { "numLeftInLocation1", 1 },
             });
             var status = customerLogic.StartOrderCycle("orderPartType", 1, 1, "1", 2, "2", timeout);
             Assert.Equal(true, status.isRunningOrderCycle);
             Assert.Equal(1, status.numLeftInOrder);
-            Assert.Equal(1, status.numLeftInLocation1);
 
             // stop immediately
             mujinController.Set(new Dictionary<string, object>()
@@ -192,7 +177,6 @@ namespace mujintestplccs
                 { "isRobotMoving", false },
                 { "isRunningOrderCycle", false },
                 { "numLeftInOrder", 1 },
-                { "numLeftInLocation1", 1 },
                 { "orderCycleFinishCode", (int)PLCLogic.PLCOrderCycleFinishCode.FinishedStoppedImmediately },
             });
             customerLogic.StopImmediately();
@@ -201,7 +185,6 @@ namespace mujintestplccs
             // mujinController.Set(new Dictionary<string, object>()
             // {
             //     { "numLeftInOrder", 0 },
-            //     { "numLeftInLocation1", 0 },
             //     { "orderCycleFinishCode", 0 },
             // });
 
@@ -209,7 +192,6 @@ namespace mujintestplccs
             Assert.Equal(false, status.isRunningOrderCycle);
             Assert.Equal(false, status.isRobotMoving);
             Assert.Equal(1, status.numLeftInOrder);
-            Assert.Equal(1, status.numLeftInLocation1);
             Assert.Equal(PLCLogic.PLCOrderCycleFinishCode.FinishedStoppedImmediately, status.orderCycleFinishCode);
         }
 
@@ -239,12 +221,10 @@ namespace mujintestplccs
             {
                 { "isRunningOrderCycle", true },
                 { "numLeftInOrder", 1 },
-                { "numLeftInLocation1", 1 },
             });
             var status = customerLogic.StartOrderCycle("orderPartType", 1, 1, "1", 2, "2", timeout);
             Assert.Equal(true, status.isRunningOrderCycle);
             Assert.Equal(1, status.numLeftInOrder);
-            Assert.Equal(1, status.numLeftInLocation1);
 
             // set error
             mujinController.Set(new Dictionary<string, object>()
@@ -252,7 +232,6 @@ namespace mujintestplccs
                 { "isRobotMoving", false },
                 { "isRunningOrderCycle", false },
                 { "numLeftInOrder", 1 },
-                { "numLeftInLocation1", 1 },
                 { "orderCycleFinishCode", (int)PLCLogic.PLCOrderCycleFinishCode.FinishedPlanningFailure },
                 { "isError", true },
                 { "errorcode", (int)PLCLogic.PLCErrorCode.PlanningError },
@@ -268,7 +247,6 @@ namespace mujintestplccs
             Assert.Equal(false, status.isRunningOrderCycle);
             Assert.Equal(false, status.isRobotMoving);
             Assert.Equal(1, status.numLeftInOrder);
-            Assert.Equal(1, status.numLeftInLocation1);
             Assert.Equal(PLCLogic.PLCOrderCycleFinishCode.FinishedPlanningFailure, status.orderCycleFinishCode);
 
             // reset error
@@ -284,7 +262,6 @@ namespace mujintestplccs
             Assert.Equal(false, status.isRunningOrderCycle);
             Assert.Equal(false, status.isRobotMoving);
             Assert.Equal(1, status.numLeftInOrder);
-            Assert.Equal(1, status.numLeftInLocation1);
             Assert.Equal(PLCLogic.PLCOrderCycleFinishCode.FinishedNotAvailable, status.orderCycleFinishCode);
         }
     }

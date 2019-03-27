@@ -164,9 +164,9 @@ namespace mujinplccs
             public int numLeftInOrder { get; set; }
 
             /// <summary>
-            /// Number of items detected in the source container.
+            /// Number of items placed.
             /// </summary>
-            public int numLeftInLocation1 { get; set; }
+            public int numPutInDestination { get; set; }
 
             /// <summary>
             /// MUJIN PLC OrderCycleFinishCode.
@@ -348,7 +348,7 @@ namespace mujinplccs
                 "isRobotMoving",
                 "location1DetectionRunning",
                 "numLeftInOrder",
-                "numLeftInLocation1",
+                "numPutInDestination",
                 "orderCycleFinishCode",
                 "location1Released",
                 "location2Released",
@@ -361,7 +361,7 @@ namespace mujinplccs
                 isRobotMoving = Convert.ToBoolean(values.Get("isRobotMoving", false)),
                 location1DetectionRunning = Convert.ToBoolean(values.Get("location1DetectionRunning", false)),
                 numLeftInOrder = Convert.ToInt32(values.Get("numLeftInOrder", 0)),
-                numLeftInLocation1 = Convert.ToInt32(values.Get("numLeftInLocation1", 0)),
+                numPutInDestination = Convert.ToInt32(values.Get("numPutInDestination", 0)),
                 orderCycleFinishCode = (PLCOrderCycleFinishCode)Convert.ToInt32(values.Get("orderCycleFinishCode", 0)),
                 location1Released = Convert.ToBoolean(values.Get("location1Released", false)),
                 location2Released = Convert.ToBoolean(values.Get("location2Released", false)),
