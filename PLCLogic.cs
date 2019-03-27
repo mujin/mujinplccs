@@ -174,19 +174,64 @@ namespace mujinplccs
             public PLCOrderCycleFinishCode orderCycleFinishCode { get; set; }
 
             /// <summary>
-            /// Whether source container can be safely moved at the moment.
+            /// Whether container at location can be safely moved at the moment.
             /// </summary>
             public bool location1Released { get; set; }
 
             /// <summary>
-            /// Whether destination container can be safely moved at the moment.
+            /// Whether container at location can be safely moved at the moment.
             /// </summary>
             public bool location2Released { get; set; }
 
             /// <summary>
-            /// Whether source container is currently empty.
+            /// Whether container at location can be safely moved at the moment.
+            /// </summary>
+            public bool location3Released { get; set; }
+
+            /// <summary>
+            /// Whether container at location can be safely moved at the moment.
+            /// </summary>
+            public bool location4Released { get; set; }
+
+            /// <summary>
+            /// Whether container at location is currently empty.
             /// </summary>
             public bool location1NotEmpty { get; set; }
+
+            /// <summary>
+            /// Whether container at location is currently empty.
+            /// </summary>
+            public bool location2NotEmpty { get; set; }
+
+            /// <summary>
+            /// Whether container at location is currently empty.
+            /// </summary>
+            public bool location3NotEmpty { get; set; }
+
+            /// <summary>
+            /// Whether container at location is currently empty.
+            /// </summary>
+            public bool location4NotEmpty { get; set; }
+
+            /// <summary>
+            /// Number of detected work parts detected and left in location.
+            /// </summary>
+            public int numLeftInLocation1 { get; set; }
+
+            /// <summary>
+            /// Number of detected work parts detected and left in location.
+            /// </summary>
+            public int numLeftInLocation2 { get; set; }
+
+            /// <summary>
+            /// Number of detected work parts detected and left in location.
+            /// </summary>
+            public int numLeftInLocation3 { get; set; }
+
+            /// <summary>
+            /// Number of detected work parts detected and left in location.
+            /// </summary>
+            public int numLeftInLocation4 { get; set; }
         }
 
         /// <summary>
@@ -352,7 +397,16 @@ namespace mujinplccs
                 "orderCycleFinishCode",
                 "location1Released",
                 "location2Released",
+                "location3Released",
+                "location4Released",
                 "location1NotEmpty",
+                "location2NotEmpty",
+                "location3NotEmpty",
+                "location4NotEmpty",
+                "numLeftInLocation1",
+                "numLeftInLocation2",
+                "numLeftInLocation3",
+                "numLeftInLocation4",
             });
 
             return new PLCOrderCycleStatus
@@ -365,7 +419,16 @@ namespace mujinplccs
                 orderCycleFinishCode = (PLCOrderCycleFinishCode)Convert.ToInt32(values.Get("orderCycleFinishCode", 0)),
                 location1Released = Convert.ToBoolean(values.Get("location1Released", false)),
                 location2Released = Convert.ToBoolean(values.Get("location2Released", false)),
+                location3Released = Convert.ToBoolean(values.Get("location3Released", false)),
+                location4Released = Convert.ToBoolean(values.Get("location4Released", false)),
                 location1NotEmpty = Convert.ToBoolean(values.Get("location1NotEmpty", false)),
+                location2NotEmpty = Convert.ToBoolean(values.Get("location2NotEmpty", false)),
+                location3NotEmpty = Convert.ToBoolean(values.Get("location3NotEmpty", false)),
+                location4NotEmpty = Convert.ToBoolean(values.Get("location4NotEmpty", false)),
+                numLeftInLocation1 = Convert.ToInt32(values.Get("numLeftInLocation1", 0)),
+                numLeftInLocation2 = Convert.ToInt32(values.Get("numLeftInLocation2", 0)),
+                numLeftInLocation3 = Convert.ToInt32(values.Get("numLeftInLocation3", 0)),
+                numLeftInLocation4 = Convert.ToInt32(values.Get("numLeftInLocation4", 0)),
             };
         }
 
@@ -390,7 +453,16 @@ namespace mujinplccs
                     { "orderCycleFinishCode", null },
                     { "location1Released", null },
                     { "location2Released", null },
+                    { "location3Released", null },
+                    { "location4Released", null },
                     { "location1NotEmpty", null },
+                    { "location2NotEmpty", null },
+                    { "location3NotEmpty", null },
+                    { "location4NotEmpty", null },
+                    { "numLeftInLocation1", null },
+                    { "numLeftInLocation2", null },
+                    { "numLeftInLocation3", null },
+                    { "numLeftInLocation4", null },
                 }, timeout);
             }
             this.CheckError();
