@@ -25,12 +25,12 @@ namespace mujinplcexamplecs
                         
             try
             {
-                if( controller.GetBoolean("isError") ) {
-                    Console.WriteLine("controller is in error 0x{0:X}, resetting", controller.Get("errorcode"));
+                if( controller.Get<bool>("isError", false) ) {
+                    Console.WriteLine("controller is in error 0x{0:X}, resetting", controller.Get<int>("errorcode", 0));
                     logic.ResetError();
                 }
 
-                if( controller.GetBoolean("isRunningOrderCycle") ) {
+                if( controller.Get<bool>("isRunningOrderCycle", false) ) {
                     Console.WriteLine("previous cycle already running, so stop and wait");
                     logic.StopOrderCycle();
                 }
@@ -42,13 +42,13 @@ namespace mujinplcexamplecs
                 PLCLogic.PLCOrderCycleStatus status;
                 if( true ) {
                     // first work piece
-                    controller.Set("orderRobotId",1);
-                    status = logic.StartOrderCycle("123", "work1", 1);
+                    controller.Set("orderRobotId", 1);
+                    status = logic.StartOrderCycle("work1", 1, 1, "1", 2, "2");
                 }
                 else {
                     // for the second work piece do
-                    controller.Set("orderRobotId",2);
-                    status = logic.StartOrderCycle("123", "work2_b", 1);
+                    controller.Set("orderRobotId", 2);
+                    status = logic.StartOrderCycle("work2_b", 1, 1, "1", 2, "2");
                 }
                 Console.WriteLine("Order cycle started. numLeftInOrder = {0}, numLeftInLocation1 = {1}.", status.numLeftInOrder, status.numLeftInLocation1);
 

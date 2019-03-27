@@ -72,6 +72,20 @@ namespace mujinplccs
         }
 
         /// <summary>
+        /// MUJIN PLC Preparation FinishCode
+        /// </summary>
+
+        public enum PLCPreparationFinishCode
+        {
+            PreparationNotAvailable = 0x0000,
+            PreparationFinishedSuccess = 0x0001,
+            PreparationFinishedImmediatelyStopped = 0x0102,
+            PreparationFinishedBadPartType = 0xfffd,
+            PreparationFinishedBadOrderCyclePrecondition = 0xfffe,
+            PreparationFinishedGenericError = 0xffff,
+        }
+
+        /// <summary>
         /// MUJIN PLC OrderCycleFinishCode
         /// </summary>
         public enum PLCOrderCycleFinishCode
@@ -84,11 +98,44 @@ namespace mujinplccs
             FinishedNoEnvironmentUpdate = 0x0005,
             FinishedDropTargetFailure = 0x0006,
             FinishedTooManyPickFailures = 0x0007,
-            FinishedCommandDisabled = 0x0100,
+            FinishedRobotExecutionError = 0x0008,
+            FinishedNoDestObstacles = 0x0009,
             FinishedStopped = 0x0101,
             FinishedStoppedImmediately = 0x0102,
             FinishedPlanningFailure = 0x1000,
+            FinishedNoValidGrasp = 0x1001,
+            FinishedNoValidDest = 0x1002,
+            FinishedNoValidGraspDestPair = 0x1003,
+            FinishedNoValidPath = 0x1004,
+            FinishedNoValidTargets = 0x1005,
+            FinishedNoValidBarcodeScan = 0x1006,
+            FinishedComputePlanFailure = 0x1007,
+            FinishedCannotGenerateGraspingModel = 0x1008,
+            FinishedContainerNotDetected = 0x2001,
+            FinishedPlaceContainerNotDetected = 0x2002,
+            FinishedBadExpectedDetectionHeight = 0x2003,
+            FinishedCannotComputeFinishPlan = 0xfff7,
+            FinishedUnknownReasonNoError = 0xfff8,
+            FinishedCannotGetState = 0xfff9,
+            FinishedCycleStopCanceled = 0xfffa,
+            FinishedDropOffIsOn = 0xfffb,
+            FinishedBadPartType = 0xfffd,
+            FinishedBadOrderCyclePrecondition = 0xfffe,
             FinishedGenericFailure = 0xffff,
+        }
+
+        /// <summary>
+        /// Mujin Pack Composition Finish Codes
+        /// </summary>
+        public enum PackCompositionFinishCodes
+        {
+            FinishedPackingUnknown = 0x0000,
+            FinishedPackingSuccess = 0x0001,
+            FinishedPackingInvalid = 0x0002,
+            FinishedPackingStopped = 0x0102,
+            FinishedCannotGetState = 0xfff9,
+            FinishedBadOrderCyclePrecondition = 0xfffe,
+            FinishedPackingError = 0xffff,
         }
 
         /// <summary>
@@ -142,6 +189,17 @@ namespace mujinplccs
             public bool location1NotEmpty { get; set; }
         }
 
+        /// <summary>
+        ///   Mujin Preparation Cycle status
+        /// </summary>
+        public sealed class PLCPreparationCycleStatus
+        {
+            /// <summary>
+            /// Whether the preparation cycle is currently running
+            /// </summary>
+            public bool isRunningPreparation { get; set; }
+        }
+
         private PLCController controller = null;
 
         /// <summary>
@@ -186,17 +244,17 @@ namespace mujinplccs
         /// </summary>
         public void CheckError()
         {
-            if (this.controller.Get("isError", false).Equals(true))
+            if (this.controller.Get<bool>("isError", false))
             {
-                var errorcode = (PLCErrorCode)Convert.ToInt32(this.controller.Get("errorcode", 0));
-                var detailedErrorCode = this.controller.GetString("detailedErrorCode", "");
+                var errorcode = (PLCErrorCode)this.controller.Get<int>("errorcode", 0);
+                var detailedErrorCode = this.controller.Get<string>("detailedErrorCode", "");
                 throw new PLCError(errorcode, detailedErrorCode);
             }
         }
 
         public bool IsError()
         {
-            return this.controller.Get("isError", false).Equals(true);
+            return this.controller.Get<bool>("isError", false);
         }
 
         /// <summary>
@@ -239,18 +297,25 @@ namespace mujinplccs
         /// <summary>
         /// Start order cycle. Block until MUJIN controller acknowledge the start command.
         /// </summary>
-        /// <param name="orderId"></param>
         /// <param name="orderPartType"></param>
         /// <param name="orderNumber"></param>
+        /// <param name="orderPickLocationIndex"></param>
+        /// <param name="orderPickContainerId"></param>
+        /// <param name="orderPlaceLocationIndex"></param>
+        /// <param name="orderPlaceContainerId"></param>
         /// <param name="timeout"></param>
         /// <returns></returns>
-        public PLCOrderCycleStatus StartOrderCycle(string orderId, string orderPartType, int orderNumber, TimeSpan? timeout = null)
+        // public PLCOrderCycleStatus StartOrderCycle(string orderPartType, int orderNumber, int orderPickLocation, string orderPickContainerId, int orderPlaceLocation, string orderPlaceContainerId, TimeSpan? timeout = null)
+        public PLCOrderCycleStatus StartOrderCycle(string orderPartType, int orderNumber, int orderPickLocationIndex, string orderPickContainerId, int orderPlaceLocationIndex, string orderPlaceContainerId, TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "orderId", orderId },
                 { "orderPartType", orderPartType },
                 { "orderNumber", orderNumber },
-                { "startOrderCycle", true },
+                { "orderPickLocationIndex", orderPickLocationIndex },
+                { "orderPlaceLocationIndex", orderPlaceLocationIndex },
+                { "orderPickContainerId", orderPickContainerId },
+                { "orderPlaceContainerId", orderPlaceContainerId },
+                { "startOrderCycle", true }
             });
             try
             {
@@ -277,7 +342,7 @@ namespace mujinplccs
         /// <returns></returns>
         public PLCOrderCycleStatus GetOrderCycleStatus(TimeSpan? timeout = null)
         {
-            var values = this.controller.Get(new string[]
+            var values = this.controller.SyncAndGet(new string[]
             {
                 "isRunningOrderCycle",
                 "isRobotMoving",
@@ -311,7 +376,7 @@ namespace mujinplccs
         /// <returns>Order cycle status information in the current state.</returns>
         public PLCOrderCycleStatus WaitForOrderCycleStatusChange(TimeSpan? timeout = null)
         {
-            if (this.controller.Get("isRunningOrderCycle", false).Equals(true))
+            if (this.controller.Get<bool>("isRunningOrderCycle", false))
             {
                 this.controller.WaitFor(new Dictionary<string, object>()
                 {
@@ -322,7 +387,6 @@ namespace mujinplccs
                     { "isRobotMoving", null },
                     { "location1DetectionRunning", null },
                     { "numLeftInOrder", null },
-                    { "numLeftInLocation1", null },
                     { "orderCycleFinishCode", null },
                     { "location1Released", null },
                     { "location2Released", null },
@@ -405,44 +469,119 @@ namespace mujinplccs
         }
 
         /// <summary>
+        /// Block until MUJIN controller is ready to start preparation cycle.
+        /// </summary>
+        /// <param name="timeout"></param>
+        public void WaitUntilPreparationCycleReady(TimeSpan? timeout = null)
+        {
+            this.controller.WaitUntil(new Dictionary<string, object>()
+            {
+                { "isRunningPreparation", false },
+                { "isModeAuto", true },
+                { "isSystemReady", true },
+                { "isCycleReady", true },
+            }, new Dictionary<string, object>()
+            {
+                { "isError", true },
+            }, timeout);
+            this.CheckError();
+        }
+
+        /// <summary>
         /// Signal to start the preparation cycle on MUJIN controller.
         /// </summary>
-        /// <param name="orderId"></param>
-        /// <param name="orderPartType"></param>
-        /// <param name="orderNumber"></param>
+        /// <param name="preparationPartType"></param>
+        /// <param name="preparationOrderNumber"></param>
+        /// <param name="preparationPickLocationIndex"></param>
+        /// <param name="preparationPickContainerId"></param>
+        /// <param name="preparationPlaceLocationIndex"></param>
+        /// <param name="preparationPlaceContainerId"></param>
         /// <param name="timeout"></param>
-        public void StartPreparation(string orderId, string orderPartType, int orderNumber, TimeSpan? timeout = null)
+        public PLCPreparationCycleStatus StartPreparationCycle(string preparationPartType, int preparationOrderNumber, int preparationPickLocationIndex, string preparationPickContainerId, int preparationPlaceLocationIndex, string preparationPlaceContainerId, TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
-                { "prepareOrderId", orderId },
-                { "preparePartType", orderId },
-                { "prepareOrderNumber", orderId },
+                { "preparationPartType", preparationPartType },
+                { "preparationOrderNumber", preparationOrderNumber },
+                { "preparationPickLocationIndex", preparationPickLocationIndex },
+                { "preparationPlaceLocationIndex", preparationPlaceLocationIndex },
+                { "preparationPickContainerId", preparationPickContainerId },
+                { "preparationPlaceContainerId", preparationPlaceContainerId },
                 { "startPreparation", true },
             });
-            // TODO: currently no signal to indicate preparation has started
-            Thread.Sleep(1000);
-            this.controller.Set(new Dictionary<string, object>() {
-                { "startPreparation", false },
-            });
-            this.controller.Sync();
+            try
+            {
+                this.controller.WaitUntil(new Dictionary<string, object>(){
+                    { "isRunningPreparation", true },
+                }, new Dictionary<string, object>(){
+                    { "isError", true },
+                }, timeout);
+            }
+            finally
+            {
+                this.controller.Set(new Dictionary<string, object>(){
+                    { "startPreparation", false },
+                });
+            }
             this.CheckError();
+            return this.GetPreparationCycleStatus();
+        }
+
+
+        /// <summary>
+        /// Gather preparation cycle status information in the current state
+        /// </summary>
+        public PLCPreparationCycleStatus GetPreparationCycleStatus(TimeSpan? timeout = null)
+        {
+            var values = this.controller.SyncAndGet(new string[]
+            {
+                "isRunningPreparation",
+            });
+
+            return new PLCPreparationCycleStatus
+            {
+                isRunningPreparation = Convert.ToBoolean(values.Get("isRunningPreparation", false))
+            };
+        }
+
+        /// <summary>
+        /// Block until MUJIN controller finishes the preparation cycle
+        /// </summary>
+        public PLCPreparationCycleStatus WaitUntilPreparationCycleFinish(TimeSpan? timeout = null)
+        {
+            this.controller.WaitUntil(new Dictionary<string, object>() {
+                { "isRunningPreparation", false },
+            }, new Dictionary<string, object>() {
+                { "isError", true },
+            }, timeout);
+            this.CheckError();
+            return this.GetPreparationCycleStatus();
         }
 
         /// <summary>
         /// Signal to stop the preparation cycle on MUJIN controller.
         /// </summary>
         /// <param name="timeout"></param>
-        public void StopPreparation(TimeSpan? timeout = null)
+        public PLCPreparationCycleStatus StopPreparationCycle(TimeSpan? timeout = null)
         {
             this.controller.Set(new Dictionary<string, object>() {
                 { "stopPreparation", true },
             });
-            // TODO: currently no signal to indicate preparation has stopped
-            Thread.Sleep(1000);
-            this.controller.Set(new Dictionary<string, object>() {
-                { "stopPreparation", false },
-            });
+            try
+            {
+                this.controller.WaitUntil(new Dictionary<string, object>() {
+                    { "isRunningPreparation", false },
+                }, new Dictionary<string, object>() {
+                    { "isError", true },
+                }, timeout);
+            }
+            finally
+            {
+                this.controller.Set(new Dictionary<string, object>() {
+                    { "stopPreparation", false },
+                });
+            }
             this.CheckError();
+            return this.GetPreparationCycleStatus();
         }
 
         /// <summary>

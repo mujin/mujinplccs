@@ -8,10 +8,10 @@ namespace mujintestplccs
     public class PLCLogicTests
     {
         [Theory]
-        [InlineData("123", "coffeebox", 10, 10)]
-        [InlineData("123", "coffeebox", 4, 10)]
-        [InlineData("123", "coffeebox", 10, 9)]
-        public void TestOrderCycle(string orderId, string orderPartType, int orderNumber, int supplyNumber)
+        [InlineData("coffeebox", 10, 1, "1", 2, "2", 10)]
+        [InlineData("coffeebox", 4, 1, "1", 2, "2", 10)]
+        [InlineData("coffeebox", 10, 1, "1", 2, "2", 9)]
+        public void TestOrderCycle(string orderPartType, int orderNumber, int orderPickLocationIndex, string orderPickContainerId, int orderPlaceLocationIndex, string orderPlaceContainerId, int supplyNumber)
         {
             var timeout = TimeSpan.FromMilliseconds(100);
             var memory = new PLCMemory();
@@ -38,7 +38,7 @@ namespace mujintestplccs
                 { "numLeftInOrder", orderNumber },
                 { "numLeftInLocation1", supplyNumber },
             });
-            var status = customerLogic.StartOrderCycle(orderId, orderPartType, orderNumber, timeout);
+            var status = customerLogic.StartOrderCycle(orderPartType, orderNumber, orderPickLocationIndex, orderPickContainerId, orderPlaceLocationIndex, orderPlaceContainerId, timeout);
             Assert.Equal(true, status.isRunningOrderCycle);
             Assert.Equal(orderNumber, status.numLeftInOrder);
             Assert.Equal(supplyNumber, status.numLeftInLocation1);
@@ -130,7 +130,7 @@ namespace mujintestplccs
                 { "numLeftInOrder", 1 },
                 { "numLeftInLocation1", 1 },
             });
-            var status = customerLogic.StartOrderCycle("orderId", "orderPartType", 1, timeout);
+            var status = customerLogic.StartOrderCycle("orderPartType", 1, 1, "1", 2, "2", timeout);
             Assert.Equal(true, status.isRunningOrderCycle);
             Assert.Equal(1, status.numLeftInOrder);
             Assert.Equal(1, status.numLeftInLocation1);
@@ -181,7 +181,7 @@ namespace mujintestplccs
                 { "numLeftInOrder", 1 },
                 { "numLeftInLocation1", 1 },
             });
-            var status = customerLogic.StartOrderCycle("orderId", "orderPartType", 1, timeout);
+            var status = customerLogic.StartOrderCycle("orderPartType", 1, 1, "1", 2, "2", timeout);
             Assert.Equal(true, status.isRunningOrderCycle);
             Assert.Equal(1, status.numLeftInOrder);
             Assert.Equal(1, status.numLeftInLocation1);
@@ -241,7 +241,7 @@ namespace mujintestplccs
                 { "numLeftInOrder", 1 },
                 { "numLeftInLocation1", 1 },
             });
-            var status = customerLogic.StartOrderCycle("orderId", "orderPartType", 1, timeout);
+            var status = customerLogic.StartOrderCycle("orderPartType", 1, 1, "1", 2, "2", timeout);
             Assert.Equal(true, status.isRunningOrderCycle);
             Assert.Equal(1, status.numLeftInOrder);
             Assert.Equal(1, status.numLeftInLocation1);
