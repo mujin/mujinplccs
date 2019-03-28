@@ -356,8 +356,8 @@ namespace mujinplccs
             this.controller.Set(new Dictionary<string, object>() {
                 { "orderPartType", orderPartType },
                 { "orderNumber", orderNumber },
-                { "orderPickLocationIndex", orderPickLocationIndex },
-                { "orderPlaceLocationIndex", orderPlaceLocationIndex },
+                { "orderPickLocation", orderPickLocationIndex },
+                { "orderPlaceLocation", orderPlaceLocationIndex },
                 { "orderPickContainerId", orderPickContainerId },
                 { "orderPlaceContainerId", orderPlaceContainerId },
                 { "startOrderCycle", true }
@@ -574,8 +574,8 @@ namespace mujinplccs
             this.controller.Set(new Dictionary<string, object>() {
                 { "preparationPartType", preparationPartType },
                 { "preparationOrderNumber", preparationOrderNumber },
-                { "preparationPickLocationIndex", preparationPickLocationIndex },
-                { "preparationPlaceLocationIndex", preparationPlaceLocationIndex },
+                { "preparationPickLocation", preparationPickLocationIndex },
+                { "preparationPlaceLocation", preparationPlaceLocationIndex },
                 { "preparationPickContainerId", preparationPickContainerId },
                 { "preparationPlaceContainerId", preparationPlaceContainerId },
                 { "startPreparation", true },
