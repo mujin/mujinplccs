@@ -11,6 +11,13 @@ namespace mujinplcexamplecs
     {
         static void Main(string[] args)
         {
+            // get the order number from command line
+            var orderNumber = 50;
+            if (args.Length > 0) {
+                orderNumber = Convert.ToInt32(args[0]);
+            }
+            Console.WriteLine("orderNumber = {0}", orderNumber);
+
             var memory = new PLCMemory();
             PLCController controller = new PLCController(memory, TimeSpan.FromSeconds(1.0));
             var logic = new PLCLogic(controller);
@@ -43,7 +50,6 @@ namespace mujinplcexamplecs
 
                     // switch source and dest based on iteration
                     var orderPartType = (iteration % 2 == 0) ? "A9607-884N-1" : "A9607-884N-2";
-                    var orderNumber = 1000;
                     var orderPickLocationIndex = (iteration % 2 == 0) ? 1 : 2;
                     var orderPlaceLocationIndex = (iteration % 2 == 0) ? 2 : 1;
                     var orderPickContainerId = String.Format("{0}-{1}", iteration, orderPickLocationIndex);
