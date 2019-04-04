@@ -299,7 +299,7 @@ namespace mujinplccs
 
         public bool IsError()
         {
-            return this.controller.Get<bool>("isError", false);
+            return this.controller.SyncAndGet<bool>("isError", false);
         }
 
         /// <summary>
@@ -317,6 +317,29 @@ namespace mujinplccs
             {
                 this.controller.Set("resetError", false);
             }
+        }
+
+        public bool IsSystemReady()
+        {
+            return this.controller.SyncAndGet<bool>("isSystemReady", false);
+        }
+
+        public bool IsModeAuto()
+        {
+            return this.controller.SyncAndGet<bool>("isModeAuto", false);
+        }
+
+        public void WaitUntilAutoMode(TimeSpan? timeout = null)
+        {
+            this.controller.WaitUntil(new Dictionary<string, object>()
+            {
+                { "isModeAuto", true },
+                { "isSystemReady", true },
+            }, new Dictionary<string, object>()
+            {
+                { "isError", true },
+            }, timeout);
+            this.CheckError();
         }
 
         /// <summary>
@@ -676,6 +699,11 @@ namespace mujinplccs
             this.CheckError();
         }
 
+        public bool IsAtHome()
+        {
+            return this.controller.SyncAndGet<bool>("isAtHome", false);
+        }
+
         /// <summary>
         /// Signal MUJIN controller to move the robot to its home position. Block until the robot starts moving.
         /// </summary>
@@ -768,20 +796,45 @@ namespace mujinplccs
             this.CheckError();
         }
 
+        public bool IsGrabbingTarget()
+        {
+            return this.controller.SyncAndGet<bool>("isGrabbingTarget", false);
+        }
+
         /// <summary>
         /// Signal MUJIN controller to power off gripper.
         /// </summary>
         /// <param name="timeout"></param>
         public void StopGripper(TimeSpan? timeout = null)
         {
-            this.controller.Set(new Dictionary<string, object>() {
-                { "stopGripper", true },
-            });
-            // TODO: currently there is no signal to indicate stop gripper command has been received.
-            Thread.Sleep(1000);
-            this.controller.Set(new Dictionary<string, object>() {
-                { "stopGripper", false },
-            });
+            this.controller.Set("stopGripper", true);
+            try
+            {
+                this.controller.WaitUntil("isGrabbingTarget", false, timeout);
+            }
+            finally
+            {
+                this.controller.Set("stopGripper", false);
+            }
+            this.CheckError();
+        }
+
+        public void ChuckGripper(TimeSpan? timeout = null)
+        {
+            this.controller.Set("chuckGripper", true);
+            // TODO: currently there is no signal to indicate chuck gripper command has been received.
+            Thread.Sleep(500);
+            this.controller.Set("chuckGripper", false);
+            this.controller.Sync();
+            this.CheckError();
+        }
+
+        public void UnchuckGripper(TimeSpan? timeout = null)
+        {
+            this.controller.Set("unchuckGripper", true);
+            // TODO: currently there is no signal to indicate unchuck gripper command has been received.
+            Thread.Sleep(500);
+            this.controller.Set("unchuckGripper", false);
             this.controller.Sync();
             this.CheckError();
         }
